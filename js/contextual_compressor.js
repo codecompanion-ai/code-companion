@@ -1,9 +1,13 @@
+const fs = require('graceful-fs');
+const CryptoJS = require('crypto-js');
 const { OpenAI } = require('langchain/llms/openai');
 const { RecursiveCharacterTextSplitter } = require('langchain/text_splitter');
 const { MemoryVectorStore } = require('langchain/vectorstores/memory');
 const { OpenAIEmbeddings } = require('langchain/embeddings/openai');
 const { ContextualCompressionRetriever } = require('langchain/retrievers/contextual_compression');
 const { LLMChainExtractor } = require('langchain/retrievers/document_compressors/chain_extract');
+
+const COMPRESSION_CACHE_FILE = 'compression_cache.json';
 
 async function contextualCompress(query, texts, metadatas = [], docsToRetrieve = 5) {
   const openAIApiKey = settings.get('apiKey');
@@ -36,22 +40,35 @@ async function contextualCompress(query, texts, metadatas = [], docsToRetrieve =
     baseCompressor,
     baseRetriever: vectorStore.asRetriever(docsToRetrieve),
   });
-  let results = await retriever.getRelevantDocuments(query);
 
-  results.sort((a, b) => a.metadata.index - b.metadata.index);
-
-  results = results.map((result) => {
-    return {
-      pageContent: result.pageContent,
-      link: result.metadata.link,
-    };
-  });
+  // Generate a unique cache key based on the query and texts
+  const cacheKey = CryptoJS.SHA256(query + JSON.stringify(texts)).toString();
+  let results = loadCache()[cacheKey];
 
   if (!results) {
-    return [];
+    results = await retriever.getRelevantDocuments(query);
+    results.sort((a, b) => a.metadata.index - b.metadata.index);
+    results = results.map((result) => ({
+      pageContent: result.pageContent,
+      link: result.metadata.link,
+    }));
+    saveCache(cacheKey, results);
   }
 
   return results;
+}
+
+function saveCache(key, data) {
+  const cache = loadCache();
+  cache[key] = data;
+  fs.writeFileSync(COMPRESSION_CACHE_FILE, JSON.stringify(cache));
+}
+
+function loadCache() {
+  if (fs.existsSync(COMPRESSION_CACHE_FILE)) {
+    return JSON.parse(fs.readFileSync(COMPRESSION_CACHE_FILE, 'utf-8'));
+  }
+  return {};
 }
 
 module.exports = {

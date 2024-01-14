@@ -112,6 +112,10 @@ class CodeAgent {
     updateLoadingIndicator(true);
     const functionName = functionCall.name;
     const args = this.parseArguments(functionCall);
+    // Ensure that the targetFile parameter is included for functions that require it
+    if (['replace'].includes(functionName) && (!args || !args.targetFile)) {
+      throw new Error('targetFile parameter is missing for the replace function.');
+    }
     let result = '';
 
     try {

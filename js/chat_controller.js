@@ -66,6 +66,14 @@ class ChatController {
   }
 
   async callAPI(api_messages, model = this.selectedModel, retryCount = 0) {
+    // Check if the response is already cached
+    const cacheKey = `openai:${JSON.stringify(api_messages)}:${model}`;
+    if (cacheManager.has(cacheKey)) {
+      return cacheManager.get(cacheKey);
+    }
+
+    // If not cached, proceed with the API call
+
     if (isDevelopment) {
       console.log(`Calling API with messages (${this.chat.countTokens(JSON.stringify(api_messages))} tokens)`, api_messages);
     }

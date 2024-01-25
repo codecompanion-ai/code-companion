@@ -20,6 +20,9 @@ By participating, you are expected to uphold this code. Please report unacceptab
 - Make sure your code lints.
 - Issue that pull request!
 
+## Contributing to GPT-4 Vision
+For contributions to the GPT-4 Vision part of the project, the same process applies. We appreciate any improvements to the performance, logic, and usability of vision capabilities.
+
 ## Coding Conventions
 
 - Use 4 spaces for indentation rather than tabs.

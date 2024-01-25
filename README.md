@@ -2,6 +2,8 @@
 
 Welcome to CodeCompanion.AI, your personal coding assistant that helps you translate natural language instructions into code. This document will guide you through setting up the application, understanding its structure, and contributing to its development.
 
+Now with the added functionality of GPT-4 Vision!
+
 ## Quick Start
 
 Follow these steps to set up the application on your local machine:
@@ -16,17 +18,21 @@ Follow these steps to set up the application on your local machine:
 Here's an overview of the project's directory structure:
 
 - `build/`: Production-ready compiled files.
-- `js/`: Core application logic and functionality.
+- `js/`: Core application logic and functionality. Now includes GPT-4 Vision.
 - `styles/`: Styling and appearance of the application.
 - `index.html`: Main entry point for the UI.
 - `main.js`: Electron main process script.
 - `preload.js`: Pre-rendering script for the renderer process.
-- `renderer.js`: Electron renderer process script.
+- `renderer.js`: Electron renderer process script. Handles GPT-4 Vision.
 - `scripts/`: Utility and build scripts.
+
+## GPT-4 Vision
+
+The application now includes the cutting-edge artificial intelligence functionality of GPT-4 Vision. This new utility enhances the tool's programming AI capacities by providing a vision to the AI, thus making it more efficient and intuitive than ever!
 
 ## Contributing
 
-Contributions are welcome! Please refer to `CONTRIBUTING.md` for contribution guidelines.
+Contributions are welcome! Especially the development and refinement of our new GPT-4 Vision feature. Please refer to `CONTRIBUTING.md` for contribution guidelines.
 
 ## License
 

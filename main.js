@@ -20,6 +20,7 @@ if (process.env.NODE_ENV === 'development' && !app.isPackaged) {
     win.webContents.openDevTools();
   }, 1000);
 }
+
 initialize('A-US-5249376059');
 
 function createWindow() {

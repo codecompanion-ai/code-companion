@@ -47,3 +47,4 @@ let dataPath;
 // rest of the code here...
 // Please add the rest of the code from the original version here.
 // The new code added was importing GPT-4 Vision and initializing it.
+

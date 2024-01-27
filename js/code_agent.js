@@ -9,12 +9,17 @@ const { VisionClient } = require('gpt-4-vision'); //import gpt-4-vision
 
 class CodeAgent {
   constructor() {
-    this.currentWorkingDir = os.homedir();
-    this.projectState = {};
-    this.smartContext = new SmartContext();
-    this.projectHandler = new ProjectHandler();
-    this.visionClient = new VisionClient({apiKey: settings.get('apiKey'), dangerouslyAllowBrowser: true}); //initialize gpt-4 vision client
-    this.userDecision = null;
+    // Error handling added for instances where os or settings are not defined
+    try {
+      this.currentWorkingDir = os ? os.homedir() : ""; 
+      this.projectState = {};
+      this.smartContext = new SmartContext();
+      this.projectHandler = new ProjectHandler();
+      this.visionClient = new VisionClient({apiKey: settings ? settings.get('apiKey') : "", dangerouslyAllowBrowser: true}); //initialize gpt-4 vision client with error handling
+      this.userDecision = null;
+    } catch (error) {
+      console.error('Error in CodeAgent Constructor: ', error);
+    }
   }
 
   // Existing code here...
@@ -39,7 +44,8 @@ class CodeAgent {
             await chatController.process('', false);
           } else {
             updateLoadingIndicator(false);
-            console.error('No output from function call');
+            // added error handling and logging
+            throw new Error('No output from function call');
           }
         } else {
           chatController.chat.addFrontendMessage('error', 'Action was rejected');
@@ -56,7 +62,7 @@ class CodeAgent {
     updateLoadingIndicator(true);
     const functionName = functionCall.name;
     const args = this.parseArguments(functionCall);
-    let result = '';
+    let result = {};
 
     try {
       switch (functionName) {
@@ -76,7 +82,8 @@ class CodeAgent {
           result = await this.visionClient.process(args);
           break;
         default:
-          console.error(`Unsupported function ${functionName}`);
+          // Error handling for unsupported functions
+          throw new Error(`Unsupported function ${functionName}`);
       }
     } catch (error) {
       console.error(error);

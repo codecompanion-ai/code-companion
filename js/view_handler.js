@@ -109,3 +109,4 @@ module.exports = {
   // Export also our new function
   prepareGP4VisionUI
 };
+

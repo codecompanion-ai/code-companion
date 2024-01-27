@@ -5,6 +5,14 @@ const { OpenAIEmbeddings } = require('langchain/embeddings/openai');
 const { ContextualCompressionRetriever } = require('langchain/retrievers/contextual_compression');
 const { LLMChainExtractor } = require('langchain/retrievers/document_compressors/chain_extract');
 
+/**
+ * This function compresses the given texts based on the query and returns the relevant data.
+ * @param {string} query The query based on which the texts are to be compressed.
+ * @param {string[]} texts The texts to be compressed.
+ * @param {Object[]} [metadatas=[]] The metadata for each text.
+ * @param {number} [docsToRetrieve=5] The number of documents to retrieve.
+ * @returns {Promise<{pageContent: string, link: string}[]>} The compressed texts and their links.
+ */
 async function contextualCompress(query, texts, metadatas = [], docsToRetrieve = 5) {
   const openAIApiKey = settings.get('apiKey');
   const model = new OpenAI({
@@ -38,6 +46,7 @@ async function contextualCompress(query, texts, metadatas = [], docsToRetrieve =
   });
   let results = await retriever.getRelevantDocuments(query);
 
+  // Sort the results based on their original order in the text given as input
   results.sort((a, b) => a.metadata.index - b.metadata.index);
 
   results = results.map((result) => {
@@ -47,7 +56,8 @@ async function contextualCompress(query, texts, metadatas = [], docsToRetrieve =
     };
   });
 
-  if (!results) {
+  // If no results are returned, return an empty array
+  if (!results.length) {
     return [];
   }
 
@@ -57,3 +67,18 @@ async function contextualCompress(query, texts, metadatas = [], docsToRetrieve =
 module.exports = {
   contextualCompress,
 };
+
+//# Testing the functionality of contextualCompress function
+const assert = require('assert');
+
+describe('contextualCompress', () => {
+  it('returns relevant and representative compressed texts', async () => {
+    // Add setup, mocks, and tests specific to your use case.
+    // This is just a pseudo code to give an idea how to write the tests
+  });
+
+  it('returns an empty array if no results are found', async () => {
+    // Add setup, mocks, and tests specific to your use case.
+    // This is just a pseudo code to give an idea how to write the tests
+  });
+});

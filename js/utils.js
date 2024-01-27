@@ -1,4 +1,6 @@
 const isTextOrBinary = require('istextorbinary');
+const NodeCache = require("node-cache"); // Require NodeCache for caching
+const tokenCache = new NodeCache(); // Instance for handling token caching
 
 async function withTimeout(promise, ms) {
   const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error(`Operation timed out after ${ms} ms`)), ms));
@@ -73,6 +75,16 @@ function getSystemInfo() {
   return systemInfo;
 }
 
+function cacheAdd(key, data, time) {
+  // Add data to cache with specified key and time-to-live (in seconds)
+  tokenCache.set(key, data, time);
+}
+
+function cacheGet(key) {
+  // Get data from cache with specified key
+  return tokenCache.get(key);
+}
+
 function isTextFile(buffer) {
   return isTextOrBinary.isText(null, buffer);
 }
@@ -82,4 +94,6 @@ module.exports = {
   withErrorHandling,
   getSystemInfo,
   isTextFile,
+  cacheAdd, // Export functions to handle cache operations
+  cacheGet,
 };

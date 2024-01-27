@@ -35,129 +35,148 @@ class TerminalSession {
   }
 
   createTerminal() {
-    this.terminal = new Terminal({
-      fontFamily: 'FiraCodeNerdFont, monospace',
-      fontWeight: 'normal',
-      fontSize: 12,
-      letterSpacing: 0,
-      lineHeight: 1.25,
-      rows: 12,
-      windowsMode: isWindows,
-      allowProposedApi: true,
-      overviewRulerWidth: 20,
-      theme: {
-        foreground: '#c0c0c0',
-        background: '#222222',
-        black: '#000000',
-        red: '#C51E14',
-        green: '#DAA520',
-        yellow: '#C7C329',
-        blue: '#0A2FC4',
-        magenta: '#C839C5',
-        cyan: '#20C5C6',
-        white: '#C7C7C7',
-        lightRed: '#c0c0c0',
-        lightGreen: '#20B2AA',
-        lightYellow: '#708090',
-        lightBlue: '#ba0e2e',
-        lightMagenta: '#DAA520',
-        lightCyan: '#008b8b',
-        lightWhite: '#ba0e2e',
-        lightBlack: '#708090',
-      },
-    });
+    //Added try-catch to handle potential exceptions
+    try{
+      this.terminal = new Terminal({
+        fontFamily: 'FiraCodeNerdFont, monospace',
+        fontWeight: 'normal',
+        fontSize: 12,
+        letterSpacing: 0,
+        lineHeight: 1.25,
+        rows: 12,
+        windowsMode: isWindows,
+        allowProposedApi: true,
+        overviewRulerWidth: 20,
+        theme: {
+          foreground: '#c0c0c0',
+          background: '#222222',
+          black: '#000000',
+          red: '#C51E14',
+          green: '#DAA520',
+          yellow: '#C7C329',
+          blue: '#0A2FC4',
+          magenta: '#C839C5',
+          cyan: '#20C5C6',
+          white: '#C7C7C7',
+          lightRed: '#c0c0c0',
+          lightGreen: '#20B2AA',
+          lightYellow: '#708090',
+          lightBlue: '#ba0e2e',
+          lightMagenta: '#DAA520',
+          lightCyan: '#008b8b',
+          lightWhite: '#ba0e2e',
+          lightBlack: '#708090',
+        },
+      });
 
-    this.terminal.open(document.getElementById('terminal_output'));
-    // this.terminal.loadAddon(new CanvasAddon());
-    this.terminal.loadAddon(this.fitAddon);
-    this.terminal.loadAddon(
-      new WebLinksAddon((event, uri) => {
-        shell.openExternal(uri);
-      }),
-    );
-    this.terminal.loadAddon(new Unicode11Addon());
-    this.terminal.unicode.activeVersion = '11';
+      this.terminal.open(document.getElementById('terminal_output'));
+      this.terminal.loadAddon(this.fitAddon);
+      this.terminal.loadAddon(
+        new WebLinksAddon((event, uri) => {
+          shell.openExternal(uri);
+        }),
+      );
+      this.terminal.loadAddon(new Unicode11Addon());
+      this.terminal.unicode.activeVersion = '11';
 
-    // set terminal height to last saved value
-    const terminalOutputHeight = settings.get('terminalOutputHeight');
-    if (terminalOutputHeight) {
-      document.querySelector('#terminal_output').style.height = `${terminalOutputHeight}px`;
+      const terminalOutputHeight = settings.get('terminalOutputHeight');
+      if (terminalOutputHeight) {
+        document.querySelector('#terminal_output').style.height = `${terminalOutputHeight}px`;
+      }
+
+      ipcRenderer.send('start-shell', {
+        cwd: chatController.codeAgent.currentWorkingDir,
+      });
+      ipcRenderer.on('shell-type', (event, data) => {
+        this.shellType = data;
+        chatController.chat.replaceSystemMessagePlaceholder('{shellType}', this.shellType);
+        this.setPrompt();
+      });
+      ipcRenderer.on('shell-data', (event, data) => {
+        this.writeToTerminal(data);
+      });
+      this.terminal.onData((data) => this.writeToShell(data));
+    } catch(error) {
+      console.error('Error while creating terminal:', error);
     }
-
-    ipcRenderer.send('start-shell', {
-      cwd: chatController.codeAgent.currentWorkingDir,
-    });
-    ipcRenderer.on('shell-type', (event, data) => {
-      this.shellType = data;
-      chatController.chat.replaceSystemMessagePlaceholder('{shellType}', this.shellType);
-      this.setPrompt();
-    });
-    ipcRenderer.on('shell-data', (event, data) => {
-      this.writeToTerminal(data);
-    });
-    this.terminal.onData((data) => this.writeToShell(data));
   }
 
   clearTerminal() {
-    this.writeToShell('clear\r');
-    this.terminal.clear();
+    //Added confirmation if terminal exists before clearing
+    if(this.terminal){
+      this.writeToShell('clear\r');
+      this.terminal.clear();
+    } else {
+      console.error("Terminal doesn't exists.");
+    }
   }
 
   async setPrompt(doNotClear = false) {
-    switch (this.shellType) {
-      case 'bash':
-        this.writeToShell(`PROMPT_COMMAND='echo -n "${FIXED_PROMPT}"'\r`);
-        break;
-      case 'zsh':
-        this.writeToShell(`precmd() { echo -n "${FIXED_PROMPT}"; }\r`);
-        break;
-      case 'fish':
-        this.writeToShell('functions --copy fish_prompt original_fish_prompt\r');
-        this.writeToShell(`function fish_prompt; original_fish_prompt; echo -n "${FIXED_PROMPT}"; end\r`);
-        break;
-      case 'powershell.exe':
-        FIXED_PROMPT = 'CodeCompanion.AI: ';
-        this.writeToShell(`function prompt { '${FIXED_PROMPT}' + (Get-Location) + '> ' }\r`);
-        break;
-      default:
-        console.error(`Unsupported shell ${this.shellType}`);
-    }
-    if (!doNotClear) {
-      setTimeout(() => {
-        this.clearTerminal();
-        this.resizeTerminalWindow();
-      }, PROMPT_TIMEOUT);
+    try {
+      switch (this.shellType) {
+        case 'bash':
+          this.writeToShell(`PROMPT_COMMAND='echo -n "${FIXED_PROMPT}"'\r`);
+          break;
+        case 'zsh':
+          this.writeToShell(`precmd() { echo -n "${FIXED_PROMPT}"; }\r`);
+          break;
+        case 'fish':
+          this.writeToShell('functions --copy fish_prompt original_fish_prompt\r');
+          this.writeToShell(`function fish_prompt; original_fish_prompt; echo -n "${FIXED_PROMPT}"; end\r`);
+          break;
+        case 'powershell.exe':
+          FIXED_PROMPT = 'CodeCompanion.AI: ';
+          this.writeToShell(`function prompt { '${FIXED_PROMPT}' + (Get-Location) + '> ' }\r`);
+          break;
+        default:
+          console.error(`Unsupported shell ${this.shellType}`);
+      }
+      if (!doNotClear) {
+        setTimeout(() => {
+          this.clearTerminal();
+          this.resizeTerminalWindow();
+        }, PROMPT_TIMEOUT);
+      }
+    } catch (error) {
+      console.error('Error while setting prompt in terminal:', error);
     }
   }
 
   resizeTerminalWindow() {
+    //Confirmed terminal exists
     if (this.terminal) {
       this.fitAddon.fit();
       ipcRenderer.send('resize-shell', {
         cols: this.terminal.cols,
         rows: this.terminal.rows,
       });
+    } else {
+      console.error("Terminal doesn't exists.");
     }
   }
 
   handleTerminalResize() {
-    this.terminalOutput = document.querySelector('#terminal_output');
-    this.debounceResizeTerminalWindow = debounce(this.resizeTerminalWindow.bind(this), 200);
+    try {
+      this.terminalOutput = document.querySelector('#terminal_output');
+      this.debounceResizeTerminalWindow = debounce(this.resizeTerminalWindow.bind(this), 200);
 
-    interact('#terminal_resize_handle').draggable({
-      cursorChecker() {
-        return 'ns-resize';
-      },
-      lockAxis: 'y',
-      listeners: {
-        move: (event) => {
-          const newHeight = parseInt(window.getComputedStyle(this.terminalOutput).height) - event.dy;
-          this.terminalOutput.style.height = `${newHeight}px`;
-          settings.set('terminalOutputHeight', newHeight);
-          this.debounceResizeTerminalWindow();
+      interact('#terminal_resize_handle').draggable({
+        cursorChecker() {
+          return 'ns-resize';
         },
-      },
-    });
+        lockAxis: 'y',
+        listeners: {
+          move: (event) => {
+            const newHeight = parseInt(window.getComputedStyle(this.terminalOutput).height) - event.dy;
+            this.terminalOutput.style.height = `${newHeight}px`;
+            settings.set('terminalOutputHeight', newHeight);
+            this.debounceResizeTerminalWindow();
+          },
+        },
+      });
+    } catch (error) {
+      console.error('Error while handling terminal resize:', error);
+    }
   }
 
   interruptShellSession() {
@@ -169,15 +188,19 @@ class TerminalSession {
   }
 
   writeToTerminal(data) {
-    this.terminal.write(data);
+    try {
+      this.terminal.write(data);
 
-    this.commandBuffer += this.removeASCII(data);
-    if (data.toString().endsWith('\r') || data.toString().endsWith('\n') || data.toString().endsWith('\r\n')) {
-      const command = this.commandBuffer.trim();
-      this.commandBuffer = '';
-      if (command.match(/cd\s+(\S+)/i)) {
-        this.needToUpdateWorkingDir = true;
+      this.commandBuffer += this.removeASCII(data);
+      if (data.toString().endsWith('\r') || data.toString().endsWith('\n') || data.toString().endsWith('\r\n')) {
+        const command = this.commandBuffer.trim();
+        this.commandBuffer = '';
+        if (command.match(/cd\s+(\S+)/i)) {
+          this.needToUpdateWorkingDir = true;
+        }
       }
+    } catch(error) {
+      console.error('Error while writing to terminal:', error);
     }
   }
 
@@ -186,24 +209,29 @@ class TerminalSession {
   }
 
   getTerminalOutput(command) {
-    const buffer = this.terminal.buffer.active;
-    const startLine = Math.max(buffer.length - 30, 0);
-    let lines = [];
-    let commandLine = 0;
-    let lineNumber = 0;
+    //Added try-catch to handle potential exceptions
+    try {
+      const buffer = this.terminal.buffer.active;
+      const startLine = Math.max(buffer.length - 30, 0);
+      let lines = [];
+      let commandLine = 0;
+      let lineNumber = 0;
 
-    for (let i = startLine; i < buffer.length; i++) {
-      const lineContent = buffer.getLine(i).translateToString(true);
-      if (lineContent.trim() !== '') {
-        lines.push(lineContent);
-        lineNumber++;
-        if (lineContent.endsWith(command)) {
-          commandLine = lineNumber;
+      for (let i = startLine; i < buffer.length; i++) {
+        const lineContent = buffer.getLine(i).translateToString(true);
+        if (lineContent.trim() !== '') {
+          lines.push(lineContent);
+          lineNumber++;
+          if (lineContent.endsWith(command)) {
+            commandLine = lineNumber;
+          }
         }
       }
+      lines = lines.slice(commandLine, lines.length - 1);
+      return lines.join('\n');
+    } catch(error) {
+      console.error('Error while getting terminal output:', error);
     }
-    lines = lines.slice(commandLine, lines.length - 1);
-    return lines.join('\n');
   }
 
   async executeShellCommand(command) {
@@ -238,9 +266,14 @@ class TerminalSession {
   }
 
   async navigateToDirectory(dir) {
-    await this.executeShellCommand(`cd "${dir}"`);
-    chatController.codeAgent.currentWorkingDir = dir;
-    this.needToUpdateWorkingDir = false;
+    // Added error handling for any rejected promise
+    try {
+      await this.executeShellCommand(`cd "${dir}"`)
+      chatController.codeAgent.currentWorkingDir = dir;
+      this.needToUpdateWorkingDir = false;
+    } catch(err) {
+      console.error(`Error navigating to directory: ${err}`);
+    }  
   }
 
   async getCurrentDirectory() {
@@ -282,7 +315,7 @@ class TerminalSession {
     try {
       return fs.existsSync(path.normalize(dirPath));
     } catch (error) {
-      console.error(error);
+      console.error(`Error checking if directory exists [${dirPath}]: ${error}`);
       return false;
     }
   }

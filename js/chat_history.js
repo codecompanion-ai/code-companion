@@ -1,16 +1,22 @@
 const { v4: uuidv4 } = require('uuid');
 
+// Bootstrap has been imported for UI components
+const bootstrap = require('bootstrap/dist/js/bootstrap.bundle'); 
 const saveChatModal = new bootstrap.Modal(document.getElementById('saveChatModal'));
 
 class ChatHistory {
   save() {
+    // Generate new UUID for every chat history
     const id = uuidv4();
+    // Get current date and time
     const date = new Date().toISOString();
+    // Title of chat
     const titleElement = document.getElementById('chatTitle');
     const title = titleElement.value || 'Untitled';
+    // Reset the chatTitle input element
     titleElement.value = '';
 
-    const record = {
+    let record = {
       id,
       title,
       date,
@@ -24,22 +30,26 @@ class ChatHistory {
       selectedModel: chatController.selectedModel,
     };
 
-    const chatHistory = settings.get('chatHistory', {});
+    let chatHistory = settings.get('chatHistory', {});
     chatHistory[id] = record;
     settings.set('chatHistory', chatHistory);
     saveChatModal.hide();
+
     renderSystemMessage('Chat saved.');
   }
 
   delete(id) {
-    const chatHistory = settings.get('chatHistory', {});
+    let chatHistory = settings.get('chatHistory', {});
     delete chatHistory[id];
     settings.set('chatHistory', chatHistory);
+    // Load the chat again after deletion
     this.load();
   }
 
   retrieveAll() {
+    // Retrieve all the chat history
     const records = Object.values(settings.get('chatHistory', {}));
+    // Sort in descending order of date
     return records.sort((a, b) => new Date(b.date) - new Date(a.date));
   }
 
@@ -56,7 +66,9 @@ class ChatHistory {
   }
 
   deleteAll() {
+    // Delete all chat history
     settings.set('chatHistory', {});
+    // Load an empty chat after deleting all
     this.load();
   }
 
@@ -90,15 +102,18 @@ class ChatHistory {
   }
 
   load() {
+    // Refresh UI with chat history
     document.getElementById('chatHistory').innerHTML = this.renderUI();
   }
 
   showModal() {
+    // If chatHandler is empty, then there is nothing to save
     if (chatController.chat.isEmpty()) {
       renderSystemMessage('Nothing to save.');
       return;
     }
     saveChatModal.show();
+    // Automatically focus to chatTitle input field
     document.getElementById('chatTitle').focus();
   }
 }

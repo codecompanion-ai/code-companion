@@ -3,7 +3,7 @@ const { RecursiveCharacterTextSplitter } = require('langchain/text_splitter');
 const { MemoryVectorStore } = require('langchain/vectorstores/memory');
 const { OpenAIEmbeddings } = require('@langchain/openai');
 const { ContextualCompressionRetriever } = require('langchain/retrievers/contextual_compression');
-const { LLMChainExtractor } = require('langchain/retrievers/document_compressors/chain_extract');
+const zlib = require('zlib');
 
 async function contextualCompress(query, texts, metadatas = [], docsToRetrieve = 5) {
   const openAIApiKey = chatController.settings.apiKey;
@@ -42,7 +42,7 @@ async function contextualCompress(query, texts, metadatas = [], docsToRetrieve =
 
   results = results.map((result) => {
     return {
-      pageContent: result.pageContent,
+      pageContent: zlib.deflateSync(result.pageContent).toString('base64'),
       link: result.metadata.link,
     };
   });
@@ -51,7 +51,10 @@ async function contextualCompress(query, texts, metadatas = [], docsToRetrieve =
     return [];
   }
 
-  return results;
+  return results.map(result => ({
+    ...result,
+    pageContent: zlib.inflateSync(Buffer.from(result.pageContent, 'base64')).toString(),
+  }));
 }
 
 module.exports = {

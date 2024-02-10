@@ -39,6 +39,8 @@ class ChatController {
     this.loadAllSettings();
     this.initializeOpenAIAPI();
     this.abortController = new AbortController();
+    // Clear the cache to ensure no stale data is used in new conversations
+    this.cacheManager.clear();
     this.chat = new Chat();
     this.agent = new Agent();
 this.cacheManager = new CacheManager();
@@ -87,7 +89,7 @@ this.cacheManager = new CacheManager();
   }
 
   loadSetting(key) {
-    const storedValue = localStorage.get(key);
+    const storedValue = localStorage.getItem(key);
     this.settings[key] = storedValue === undefined ? DEFAULT_SETTINGS[key] : storedValue;
 
     return this.settings[key];
@@ -98,7 +100,7 @@ this.cacheManager = new CacheManager();
     if (value === null) {
       element.type === 'checkbox' ? (value = element.checked) : (value = element.value);
     }
-    localStorage.set(key, value);
+    localStorage.setItem(key, value);
     this.settings[key] = value;
     this.renderSettingValueInUI(key, value);
 
@@ -134,7 +136,10 @@ this.cacheManager = new CacheManager();
   }
 
   async callAPI(api_messages, model = this.settings.selectedModel, retryCount = 0) {
-    if (isDevelopment) {
+    // Previously 'isDevelopment' was used, but it's not defined in this scope.
+// Assuming it's a global variable or should be set based on the environment.
+const isDevelopment = process.env.NODE_ENV === 'development';
+if (isDevelopment) {
       console.log(`Calling API with messages (${this.chat.countTokens(JSON.stringify(api_messages))} tokens)`, api_messages);
     }
 
@@ -149,12 +154,21 @@ const callParams = {
         functions: enabledTools.map(tool => tool.name), // Request only the names of enabled tools
       };
 
-      if (isDevelopment) {
+      // Previously 'isDevelopment' was used, but it's not defined in this scope.
+// Assuming it's a global variable or should be set based on the environment.
+const isDevelopment = process.env.NODE_ENV === 'development';
+if (isDevelopment) {
         callParams.seed = 69;
       }
 
       // calculate tokens for last request
       this.lastRequestTokens = this.chat.countTokens(JSON.stringify(api_messages));
+      // Moved the token count check before adding to conversationTokens
+      if (this.lastRequestTokens > this.settings.maxTokensPerRequest) {
+        throw new Error(
+          `The number of tokens in the current request (${this.lastRequestTokens}) exceeds the maximum allowed (${this.settings.maxTokensPerRequest} tokens). Please reduce the request size and try again.`
+        );
+      }
       this.conversationTokens += this.lastRequestTokens;
 
       if (this.lastRequestTokens > this.settings.maxTokensPerRequest) {
@@ -182,7 +196,10 @@ const callParams = {
       });
 
       const chatCompletion = await stream.finalChatCompletion();
-      if (isDevelopment) {
+      // Previously 'isDevelopment' was used, but it's not defined in this scope.
+// Assuming it's a global variable or should be set based on the environment.
+const isDevelopment = process.env.NODE_ENV === 'development';
+if (isDevelopment) {
         console.log('API response:', chatCompletion);
       }
 
@@ -261,9 +278,14 @@ let apiResponse = this.cacheManager.get(cacheKey);
 if (!apiResponse) {
   // Limit API calls by checking if the necessary data is already available
   // and by batching requests where possible
-  apiResponse = await this.callAPI(formattedMessages);
-  // Cache the new API response for future use
-  this.cacheManager.set(cacheKey, apiResponse);
+  // Additionally, check if the conversationTokens exceed the maxTokensPerChat before making the API call
+  if (this.conversationTokens + this.chat.countTokens(JSON.stringify(formattedMessages)) <= this.settings.maxTokensPerChat) {
+    apiResponse = await this.callAPI(formattedMessages);
+    // Cache the new API response for future use
+    this.cacheManager.set(cacheKey, apiResponse);
+  } else {
+    throw new Error(`The total number of tokens used in this chat would exceed the maximum allowed (${this.settings.maxTokensPerChat} tokens). Please clear the chat or remove some messages and try again.`);
+  }
 }
 
       if (!apiResponse) {
@@ -354,6 +376,8 @@ if (!apiResponse) {
 
   async clearChat() {
     trackEvent(`new_chat`);
+    // Clear the cache to ensure no stale data is used in new conversations
+    this.cacheManager.clear();
     this.chat = new Chat();
     this.chat.addBackendMessage('system', systemMessage);
     this.agent.userDecision = false;

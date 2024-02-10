@@ -66,6 +66,9 @@ class Agent {
   }
 
   async callFunction(functionCall) {
+    if (!this.validateFileName(functionCall)) {
+      throw new Error('File name is not provided or invalid.');
+    }
     viewController.updateLoadingIndicator(true);
     const functionName = functionCall.name;
     const args = this.parseArguments(functionCall);
@@ -89,6 +92,9 @@ class Agent {
   }
 
   parseArguments(functionCall) {
+    // Validation for file name should be handled here if required by the function call
+    // This is a placeholder for where the validation logic would be inserted
+
     try {
       return JSON.parse(functionCall.arguments);
     } catch (error) {
@@ -177,5 +183,18 @@ class Agent {
     }
   }
 }
+
+
+  validateFileName(functionCall) {
+    // Actual validation logic to check for file name
+    if (functionCall && functionCall.arguments) {
+      const args = JSON.parse(functionCall.arguments);
+      // Assuming that the file name is passed as an argument named 'fileName'
+      if ('fileName' in args && typeof args.fileName === 'string' && args.fileName.trim() !== '') {
+        return true;
+      }
+    }
+    return false;
+  }
 
 module.exports = Agent;

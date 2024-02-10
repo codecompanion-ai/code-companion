@@ -242,11 +242,26 @@ async function replaceInFile({ targetFile, items }) {
     const matches = (content.split(findString) || []).length - 1;
 
     if (matches === 0) {
-      error = true;
-      itemResults.push({
-        item: findString,
-        result: "findString is not present in the 'content' field above. Use a different findString strictly present in the file",
-      });
+      // Introduce a delay before re-reading the file
+      await new Promise(resolve => setTimeout(resolve, 100));
+      // Read the file again to ensure the content is up-to-date
+      content = fs.readFileSync(filePath, 'utf8');
+      // Check again if the findString is present in the updated content
+      if (!content.includes(findString)) {
+        error = true;
+        itemResults.push({
+          item: findString,
+          result: "findString is not present in the file. No changes made.",
+        });
+      } else {
+        // If found on re-read, perform the replacement
+        totalMatches += 1;
+        content = content.replace(findString, replaceWith);
+        itemResults.push({
+          item: findString,
+          result: 'First match replaced after re-read',
+        });
+      }
     } else {
       totalMatches += matches;
       if (replaceAll) {

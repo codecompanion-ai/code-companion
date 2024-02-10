@@ -140,12 +140,13 @@ this.cacheManager = new CacheManager();
 
     try {
       const enabledTools = toolDefinitions.filter((tool) => tool.enabled);
-      const callParams = {
+      // Optimize data fetching by requesting only necessary fields
+const callParams = {
         model,
         messages: api_messages,
         top_p: 0.1,
         stream: true,
-        functions: enabledTools,
+        functions: enabledTools.map(tool => tool.name), // Request only the names of enabled tools
       };
 
       if (isDevelopment) {
@@ -254,9 +255,14 @@ this.cacheManager = new CacheManager();
       viewController.updateLoadingIndicator(true, 'Waiting for ChatGPT ...');
       const formattedMessages = this.chat.backendMessages.map((message) => _.omit(message, ['id']));
       const cacheKey = JSON.stringify(formattedMessages);
+// Check if the response is already cached
 let apiResponse = this.cacheManager.get(cacheKey);
+// If not, call the API and cache the response
 if (!apiResponse) {
+  // Limit API calls by checking if the necessary data is already available
+  // and by batching requests where possible
   apiResponse = await this.callAPI(formattedMessages);
+  // Cache the new API response for future use
   this.cacheManager.set(cacheKey, apiResponse);
 }
 

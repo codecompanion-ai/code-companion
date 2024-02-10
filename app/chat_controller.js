@@ -5,6 +5,7 @@ const _ = require('lodash');
 const autosize = require('autosize');
 
 const Agent = require('./chat/agent');
+const CacheManager = require('./cache_manager');
 const Chat = require('./chat/chat');
 const TerminalSession = require('./tools/terminal_session');
 const { getSystemInfo } = require('./utils');
@@ -40,6 +41,8 @@ class ChatController {
     this.abortController = new AbortController();
     this.chat = new Chat();
     this.agent = new Agent();
+this.cacheManager = new CacheManager();
+this.cacheManager = new CacheManager();
     this.terminalSession = new TerminalSession();
     this.processMessageChange = this.processMessageChange.bind(this);
     this.submitMessage = this.submitMessage.bind(this);
@@ -250,7 +253,12 @@ class ChatController {
     try {
       viewController.updateLoadingIndicator(true, 'Waiting for ChatGPT ...');
       const formattedMessages = this.chat.backendMessages.map((message) => _.omit(message, ['id']));
-      const apiResponse = await this.callAPI(formattedMessages);
+      const cacheKey = JSON.stringify(formattedMessages);
+let apiResponse = this.cacheManager.get(cacheKey);
+if (!apiResponse) {
+  apiResponse = await this.callAPI(formattedMessages);
+  this.cacheManager.set(cacheKey, apiResponse);
+}
 
       if (!apiResponse) {
         console.error('No response from API');

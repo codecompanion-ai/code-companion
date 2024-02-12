@@ -34,6 +34,24 @@ const API_USAGE_ALERT_INTERVAL = 60 * 60 * 1000; // Check every hour
 
 let lastApiUsageAlertTime = 0;
 
+const apiResponseCache = new CacheManager(); // Initialize cache manager
+
+function getApiResponse(query) {
+  
+  // Check if response is already cached
+  const cachedResponse = apiResponseCache.get(query);
+  if (cachedResponse) {
+      return Promise.resolve(cachedResponse);
+  }
+  
+  // If not in cache, make an API call and save result in cache
+  return OpenAI.compose({ prompt: query, tokens: DEFAULT_SETTINGS.maxTokensPerRequest })
+    .then(response =>{
+      apiResponseCache.set(query, response);
+      return response;
+    });
+}
+
 function checkApiUsage() {
   const currentTime = Date.now();
   if (currentTime - lastApiUsageAlertTime > API_USAGE_ALERT_INTERVAL) {
@@ -49,4 +67,4 @@ function checkApiUsage() {
 
 // Existing ChatController class and other code...
 
-// Remember to call checkApiUsage() at appropriate places in the code, such as after API calls.
+// Remember to call checkApiUsage() and getApiResponse() at appropriate places in the code, such as after API calls.

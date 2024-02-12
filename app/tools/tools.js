@@ -6,6 +6,8 @@ const axios = require('axios');
 const { Readability } = require('@mozilla/readability');
 const { JSDOM } = require('jsdom');
 
+const MAX_CONTENT_LENGTH = 5000 // Add a util const to limit content length and avoid excessive usage of tokens
+
 const toolDefinitions = [
   {
     name: 'create_or_overwrite_file',
@@ -315,7 +317,13 @@ async function readFile({ targetFiles }) {
       continue;
     }
     readFiles.push(filePath);
-    const fileContent = fs.readFileSync(filePath, 'utf8');
+    let fileContent = fs.readFileSync(filePath, 'utf8');
+
+    // Modify the file content to be under max length to reduce token usage
+    if(fileContent.length > MAX_CONTENT_LENGTH) {
+        fileContent = fileContent.substring(0, MAX_CONTENT_LENGTH);
+    }
+
     tokensRead += chatController.chat.countTokens(fileContent);
     result.push({
       targetFile: targetFiles[i],

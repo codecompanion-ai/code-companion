@@ -10,9 +10,20 @@ class BackgroundTask {
     this.chatController = chatController;
   }
 
+  // added a utility function to limit the length of the prompt by a specific limit
+  limitPromptLength(prompt, limit = 2048) {
+    if(prompt.length > limit){
+      return prompt.substring(0, limit) + '...';
+    }
+    return prompt;
+  }
+
   async run({ prompt, format, temperature = 1.0 }) {
     try {
-      const messages = this.buildMessages(format, prompt);
+      // limit the length of the prompt before sending to the API
+      const limitedPrompt = this.limitPromptLength(prompt);
+
+      const messages = this.buildMessages(format, limitedPrompt);
       const config = {
         messages: messages,
         temperature: temperature,

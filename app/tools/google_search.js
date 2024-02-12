@@ -1,11 +1,11 @@
 const { google } = require('googleapis');
 const customsearch = google.customsearch('v1');
 
-const TOP_N_RESULTS = 10;
+// Refactored to limit the search results and optimize token usage
+const TOP_N_RESULTS = 5; 
 
 class GoogleSearch {
   constructor() {
-    // This keys are provided out of good will for the community, please do not abuse them or you will get them revoked.
     this.apiKey = 'AIzaSyCcVfWEPZu_CYlQvxDou_sujjgjedSARJk';
     this.cxId = '80a4581942dad4e4d';
   }
@@ -15,8 +15,9 @@ class GoogleSearch {
       cx: this.cxId,
       q: query,
       auth: this.apiKey,
+      num: TOP_N_RESULTS, // Limit the number of search results to optimize token usage
     });
-    return res.data.items;
+    return res.data.items.slice(0, TOP_N_RESULTS); // Ensuring we are getting only top results after query is made
   }
 
   async multipleSearch(queries) {
@@ -33,7 +34,7 @@ class GoogleSearch {
     if (results) {
       formattedResults = results.map((result) => {
         if (result && result.length > 0) {
-          return result.slice(0, TOP_N_RESULTS).map((item, index) => {
+          return result.map((item, index) => {
             return {
               relevancy_score: 1 - index / TOP_N_RESULTS,
               title: item.title,

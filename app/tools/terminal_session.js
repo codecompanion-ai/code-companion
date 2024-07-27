@@ -213,7 +213,7 @@ class TerminalSession {
   async executeShellCommand(command) {
     viewController.activateTab('shell-tab');
     this.resizeTerminalWindow();
-    await this.interruptShellSession();
+    // await this.interruptShellSession();
 
     return new Promise((resolve, reject) => {
       this.outputData = '';

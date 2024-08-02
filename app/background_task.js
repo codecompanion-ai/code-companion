@@ -30,7 +30,7 @@ class BackgroundTask {
       log('BackgroundTask:');
       const response = await this.client.call({ messages, tool });
       this.chatController.updateUsage(response.usage);
-      return response.content;
+      return response.tool_calls[0].function.arguments.result;
     } catch (error) {
       console.error(error);
     }

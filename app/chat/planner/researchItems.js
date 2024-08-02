@@ -1,80 +1,97 @@
-const researchItems = {
-  projectOverview: {
+const researchItems = [
+  {
+    name: 'project_overview',
     description: `Gather a high-level overview of the project.`,
     prompt: `Provide a concise overview of the project. Use information from README files, package.json files, and other relevant files.`,
-    tools: [],
     outputFormat: {
-      name: { type: 'string' },
-      purpose: { type: 'string' },
-      primaryTechnologies: { type: 'array', items: { type: 'string' } },
-      installationInstructions: { type: 'string' },
-      launchInstructions: { type: 'string' },
+      project_name: { type: 'string' },
+      project_purpose: { type: 'string' },
+      primary_technologies: { type: 'array', items: { type: 'string' } },
+      installation_instructions: { type: 'string' },
+      launch_instructions: { type: 'string' },
     },
+    additionalInformation: 'projectStructure',
     cache: true,
   },
-  // versionControl: {
-  //   description: `Retrieve information about the project's version control system and current state.`,
-  //   prompt: `Analyze the version control system. Provide details on the current branch, recent commits, and any pending changes.`,
-  //   tools: [],
-  //   outputFormat: `{
-  //     "versionControlSystem": "string",
-  //     "currentBranch": "string",
-  //     "recentCommits": [
-  //       {
-  //         "hash": "string",
-  //         "message": "string",
-  //         "author": "string",
-  //         "date": "string"
-  //       }
-  //     ],
-  //     "pendingChanges": ["string"]
-  //   }`,
-  // },
-  // projectStructure: {
+  // {
+  //   name: 'Project directory structure',
   //   description: `Analyze and summarize the project's directory structure and file organization.`,
   //   prompt: `Examine the project's directory structure. Provide a summary of key directories, their purposes, and any notable patterns in file organization.`,
-  //   tools: [],
-  //   outputFormat: `{
-  //     "rootDirectory": "string",
-  //     "keyDirectories": [
-  //       {
-  //         "name": "string",
-  //         "purpose": "string",
-  //         "notable_files": ["string"]
-  //       }
-  //     ],
-  //     "organizationPatterns": ["string"]
-  //   }`,
-  // },
-  // codeConventions: {
-  //   description: `Identify and summarize the coding conventions and style guidelines used in the project.`,
-  //   prompt: `Analyze the codebase for consistent coding conventions and style guidelines. Summarize the main conventions for naming, formatting, and organization.`,
-  //   tools: [],
-  //   outputFormat: `{
-  //     "namingConventions": {
-  //       "variables": "string",
-  //       "functions": "string",
-  //       "classes": "string"
+  //   outputFormat: {
+  //     rootProjectDirectory: { type: 'string' },
+  //     keyDirectories: {
+  //       type: 'array',
+  //       items: {
+  //         type: 'object',
+  //         properties: {
+  //           name: { type: 'string' },
+  //           purpose: { type: 'string' },
+  //         },
+  //       },
   //     },
-  //     "formattingConventions": ["string"],
-  //     "organizationConventions": ["string"]
-  //   }`,
+  //     organizationPatterns: { type: 'array', items: { type: 'string' } },
+  //   },
+  //   additionalInformation: 'projectStructure',
+  //   cache: true,
   // },
-  // dependencies: {
+  // {
+  //   name: 'project_dependencies',
   //   description: `List and categorize the project's dependencies, including both runtime and development dependencies.`,
-  //   prompt: `Examine the project's dependency management files. List all dependencies, categorizing them as runtime or development, and note their versions.`,
+  //   prompt: `
+  //   Examine the project's dependency management files.
+  //   List all dependencies, categorizing them as runtime or development, and note their versions.`,
+  //   outputFormat: {
+  //     runtime_dependencies: {
+  //       type: 'array',
+  //       items: {
+  //         type: 'object',
+  //         properties: {
+  //           name: { type: 'string' },
+  //           version: { type: 'string' },
+  //         },
+  //       },
+  //     },
+  //     dev_dependencies: {
+  //       type: 'array',
+  //       items: {
+  //         type: 'object',
+  //         properties: {
+  //           name: { type: 'string' },
+  //           version: { type: 'string' },
+  //         },
+  //       },
+  //     },
+  //   },
+  //   additionalInformation: 'projectStructure',
+  //   cache: true,
+  // },
+  {
+    name: 'task_relevant_files',
+    description: `Identify files that are likely to be relevant to the user task`,
+    prompt: `
+    Based on the user task identify files that are likely to be needed to complete the task.
+    Consider dependencies, imports, and functional relationships.
+    If there is less than 20 code files, just read all files.
+    If there are more than 20 code files, search codebase.
+    Include those that are most likely needed to complete coding task`,
+    outputFormat: {
+      directly_related_files: { type: 'array', items: { type: 'string', description: 'The file name' } },
+      potentially_related_files: { type: 'array', items: { type: 'string', description: 'The file name' } },
+    },
+    additionalInformation: 'getTaskDescription',
+    cache: false,
+  },
+  // sampleCode: {
+  //   description: `Locate and extract relevant code snippets that may serve as examples or references for the current task.`,
+  //   prompt: `Search the codebase for snippets that demonstrate patterns or functionality similar to what's needed for the current task. Extract and briefly explain these snippets.`,
   //   tools: [],
   //   outputFormat: `{
-  //     "runtimeDependencies": [
+  //     "snippets": [
   //       {
-  //         "name": "string",
-  //         "version": "string"
-  //       }
-  //     ],
-  //     "devDependencies": [
-  //       {
-  //         "name": "string",
-  //         "version": "string"
+  //         "file": "string",
+  //         "code": "string",
+  //         "explanation": "string",
+  //         "relevance": "string"
   //       }
   //     ]
   //   }`,
@@ -108,31 +125,24 @@ const researchItems = {
   //     "customRules": ["string"]
   //   }`,
   // },
-  // relatedFiles: {
-  //   description: `Identify files that are likely to be relevant to the current task or code changes.`,
-  //   prompt: `Based on the current task or recent code changes, identify files that are likely to be relevant. Consider dependencies, imports, and functional relationships.`,
+  // versionControl: {
+  //   description: `Retrieve information about the project's version control system and current state.`,
+  //   prompt: `Analyze the version control system. Provide details on the current branch, recent commits, and any pending changes.`,
   //   tools: [],
   //   outputFormat: `{
-  //     "directlyRelatedFiles": ["string"],
-  //     "potentiallyRelatedFiles": ["string"],
-  //     "reason": "string"
-  //   }`,
-  // },
-  // sampleCode: {
-  //   description: `Locate and extract relevant code snippets that may serve as examples or references for the current task.`,
-  //   prompt: `Search the codebase for snippets that demonstrate patterns or functionality similar to what's needed for the current task. Extract and briefly explain these snippets.`,
-  //   tools: [],
-  //   outputFormat: `{
-  //     "snippets": [
+  //     "versionControlSystem": "string",
+  //     "currentBranch": "string",
+  //     "recentCommits": [
   //       {
-  //         "file": "string",
-  //         "code": "string",
-  //         "explanation": "string",
-  //         "relevance": "string"
+  //         "hash": "string",
+  //         "message": "string",
+  //         "author": "string",
+  //         "date": "string"
   //       }
-  //     ]
+  //     ],
+  //     "pendingChanges": ["string"]
   //   }`,
   // },
-};
+];
 
 module.exports = researchItems;

@@ -22,15 +22,18 @@ class OpenAIModel {
     this.streamCallback = streamCallback;
   }
 
-  async call({ messages, model, tool = null, tools = null, temperature = 0.0 }) {
+  async call({ messages, model, tool = null, tools = null, temperature = 0.0, tool_choice = null }) {
     let response;
     const callParams = {
       model: model || this.model,
       messages,
       temperature,
     };
-    if (tool !== null) {
-      response = await this.toolUse(callParams, tool);
+    if (tool_choice) {
+      callParams.tool_choice = tool_choice;
+    }
+    if (tool !== null || tool_choice === 'required') {
+      response = await this.toolUse(callParams, [tool, ...(tools || [])].filter(Boolean), tool_choice);
     } else {
       callParams.tools = tools.map((tool) => this.openAiToolFormat(tool));
       response = await this.stream(callParams);
@@ -85,17 +88,17 @@ class OpenAIModel {
     return existingCalls;
   }
 
-  async toolUse(callParams, tool) {
-    callParams.tools = [this.openAiToolFormat(tool)];
-    callParams.tool_choice = { type: 'function', function: { name: tool.name } };
+  async toolUse(callParams, tools, toolChoice) {
+    callParams.tools = tools.map((tool) => this.openAiToolFormat(tool));
+    callParams.tool_choice = toolChoice ? toolChoice : { type: 'function', function: { name: tools[0].name } };
     log('Calling model API:', callParams);
     const chatCompletion = await this.client.chat.completions.create(callParams, {
       signal: this.chatController.abortController.signal,
     });
     log('Raw response', chatCompletion);
-    const { result } = this.parseJSONSafely(chatCompletion.choices[0].message.tool_calls[0].function.arguments);
     return {
-      content: result,
+      content: chatCompletion.choices[0].message.content,
+      tool_calls: this.formattedToolCalls(chatCompletion.choices[0].message.tool_calls),
       usage: {
         input_tokens: chatCompletion.usage?.prompt_tokens,
         output_tokens: chatCompletion.usage?.completion_tokens,

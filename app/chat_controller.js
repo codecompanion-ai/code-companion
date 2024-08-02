@@ -5,6 +5,7 @@ const autosize = require('autosize');
 
 const Agent = require('./chat/agent');
 const Chat = require('./chat/chat');
+const Planner = require('./chat/planner/planner');
 const TerminalSession = require('./tools/terminal_session');
 const Browser = require('./chat/tabs/browser');
 const { trackEvent } = require('@aptabase/electron/renderer');
@@ -266,6 +267,7 @@ class ChatController {
     // only submitted form UI
     if (this.chat.isEmpty() || this.chat.onlyHasImages()) {
       this.chat.addTask(userMessage);
+      this.chat.addPlan(await new Planner(this).run(userMessage));
       document.getElementById('projectsCard').innerHTML = '';
       await this.process();
     } else {

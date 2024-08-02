@@ -24,7 +24,7 @@ class AnthropicModel {
     this.streamCallback = streamCallback;
   }
 
-  async call({ messages, model, tool = null, tools = null, temperature = 0.0 }) {
+  async call({ messages, model, tool = null, tools = null, temperature = 0.0, tool_choice = null }) {
     let response;
     const system = messages.find((message) => message.role === 'system');
     const callParams = {
@@ -34,8 +34,11 @@ class AnthropicModel {
       temperature,
       max_tokens: this.maxTokens,
     };
-    if (tool !== null) {
-      response = await this.toolUse(callParams, tool);
+    if (tool_choice) {
+      callParams.tool_choice = tool_choice;
+    }
+    if (tool !== null || tool_choice === 'required') {
+      response = await this.toolUse(callParams, [tool, ...(tools || [])].filter(Boolean), tool_choice);
     } else {
       callParams.tools = tools.map((tool) => this.anthropicToolFormat(tool));
       response = await this.stream(callParams);
@@ -94,17 +97,17 @@ class AnthropicModel {
     };
   }
 
-  async toolUse(callParams, tool) {
-    callParams.tools = [this.anthropicToolFormat(tool)];
-    callParams.tool_choice = { type: 'tool', name: tool.name };
+  async toolUse(callParams, tools, toolChoice) {
+    callParams.tools = tools.map((tool) => this.anthropicToolFormat(tool));
+    callParams.tool_choice = toolChoice === 'required' ? { type: 'any' } : { type: 'tool', name: tools[0].name };
     this.options.signal = this.chatController.abortController.signal;
 
     log('Calling model API:', callParams);
     const response = await this.client.messages.create(callParams, this.options);
     log('Raw response', response);
-    const { result } = response.content.filter((item) => item.type === 'tool_use')[0].input;
     return {
-      content: result,
+      content: response.content.filter((item) => item.type === 'text')?.[0]?.text || '',
+      tool_calls: this.formattedToolCalls(response.content),
       usage: {
         input_tokens: response.usage.input_tokens,
         output_tokens: response.usage.output_tokens,

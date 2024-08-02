@@ -46,6 +46,10 @@ class Chat {
     viewController.activateTab('task-tab');
   }
 
+  addPlan(plan) {
+    this.plan = plan;
+  }
+
   renderTask() {
     if (!this.task) {
       return;
@@ -55,7 +59,6 @@ class Chat {
       this.taskTitle || this.task.split(' ').slice(0, 4).join(' ') + (this.task.split(' ').length > 4 ? '...' : '');
     document.getElementById('taskTitle').innerText = taskTitle;
     document.getElementById('taskContainer').innerHTML = marked.parse(this.task);
-    document.getElementById('messageInput').setAttribute('placeholder', 'Send message...');
   }
 
   async createTaskTitle() {

@@ -133,7 +133,7 @@ class ChatContextBuilder {
     const taskRelevantFiles = this.chat.plan['task_relevant_files'];
     if (taskRelevantFiles) {
       const directly_related_files = taskRelevantFiles.directly_related_files;
-      this.taskRelevantFiles = [...this.taskRelevantFiles, ...directly_related_files];
+      this.taskRelevantFiles = [...new Set([...this.taskRelevantFiles, ...directly_related_files])];
       console.log('taskRelevantFiles', taskRelevantFiles);
     }
   }
@@ -271,49 +271,6 @@ class ChatContextBuilder {
     const relevantFilesContents = await this.getRelevantFilesContents();
 
     return `${projetState}${relevantFilesAndFoldersToUserMessages}${relevantFilesContents}`;
-  }
-
-  async getRelevantFilesAndFoldersToUserMessages() {
-    if (
-      !this.searchRelevantFiles ||
-      !chatController.settings.selectedEmbeddingsModel ||
-      !chatController.agent.projectController.currentProject
-    ) {
-      return '';
-    }
-
-    let lastBackendMessage = this.chat.backendMessages[this.chat.backendMessages.length - 1];
-    let lastUserMessage;
-    if (!lastBackendMessage) {
-      lastUserMessage = this.chat.task;
-    } else {
-      if (lastBackendMessage.role === 'user') {
-        lastUserMessage = lastBackendMessage;
-      }
-    }
-
-    if (!lastUserMessage) {
-      return '';
-    }
-
-    const params = {
-      query: this.chat.task + (lastUserMessage ? ' ' + lastUserMessage.content : ''),
-      limit: 10,
-      filenamesOnly: true,
-    };
-    const projectController = chatController.agent.projectController;
-
-    const relevantFilesAndFolders = await projectController.searchEmbeddings(params);
-    if (!relevantFilesAndFolders || relevantFilesAndFolders.length === 0) {
-      return '';
-    } else {
-      const relevantFilesAndFoldersMessage = relevantFilesAndFolders
-        .map((result) => {
-          return `- "${result}"`;
-        })
-        .join('\n');
-      return `These files might or might not be relevant:\n<relevant_files_and_folders>\n${relevantFilesAndFoldersMessage}\n</relevant_files_and_folders>\n`;
-    }
   }
 
   async getRelevantFilesContents() {

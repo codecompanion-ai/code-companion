@@ -331,6 +331,12 @@ class ViewController {
     });
   }
 
+  toogleChatInputContainer() {
+    const chatInputContainer = document.getElementById('chatInputContainer');
+    chatInputContainer.style.display =
+      chatController.agent.projectController.currentProject === null ? 'none' : 'block';
+  }
+
   activateTooltips() {
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
     [...tooltipTriggerList].forEach((tooltipTriggerEl) => {

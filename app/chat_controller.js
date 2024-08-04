@@ -316,14 +316,13 @@ class ChatController {
     };
     viewController.updateFooterMessage();
     viewController.showWelcomeContent();
-
+    viewController.toogleChatInputContainer();
     this.agent.projectState = {
       complexity: '',
       currentWorkingDir: '',
       folderStructure: '',
       requirementsChecklist: '',
     };
-
     onboardingController.showAllTips();
     viewController.onShow();
   }

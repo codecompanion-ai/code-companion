@@ -95,6 +95,8 @@ class TaskTab {
       document.getElementById('taskTitle').innerText = 'New task';
       document.getElementById('taskContainer').innerHTML =
         '<div class="text-secondary">Provide task details in the chat input to start a new task</div>';
+      this.contextProjectDetailsContainer.innerHTML = '';
+      this.contextFilesContainer.innerHTML = '';
       return;
     }
 

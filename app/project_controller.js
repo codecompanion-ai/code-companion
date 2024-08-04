@@ -56,6 +56,7 @@ class ProjectController {
     this.currentProject = project;
     document.title = project.name + ' - CodeCompanion';
     viewController.showWelcomeContent();
+    viewController.toogleChatInputContainer();
     this.git = new Git(project.path);
   }
 

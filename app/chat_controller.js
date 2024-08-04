@@ -296,11 +296,6 @@ class ChatController {
 
   async clearChat() {
     trackEvent(`new_chat`);
-    if (this.chat && this.chat.task) {
-      document.getElementById('taskTitle').innerText = '';
-      document.getElementById('taskContainer').innerHTML =
-        '<div class="text-secondary">Provide task details in the chat input to start a new task</div>';
-    }
     this.chat = new Chat();
     this.agent = new Agent(this.agent.projectController.currentProject);
     this.initializeModel();
@@ -311,7 +306,7 @@ class ChatController {
     document.getElementById('retry_button').setAttribute('hidden', true);
     document.getElementById('approval_buttons').setAttribute('hidden', true);
     document.getElementById('messageInput').disabled = false;
-    this.chat.renderTask();
+    this.taskTab.renderTask(null, 'New task');
     document.getElementById('messageInput').setAttribute('placeholder', 'Provide task details...');
     this.stopProcess = false;
     this.usage = {

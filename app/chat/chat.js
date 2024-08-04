@@ -1,5 +1,4 @@
 const { clipboard } = require('electron');
-const marked = require('marked');
 
 const ChatHistory = require('./chat_history');
 const ChatContextBuilder = require('./chat_context_builder');
@@ -40,25 +39,14 @@ class Chat {
 
   async addTask(task) {
     this.task = task;
-    this.renderTask();
+    chatController.taskTab.renderTask(task, task);
     await this.createTaskTitle();
-    this.renderTask();
+    chatController.taskTab.renderTask(task, this.taskTitle);
     viewController.activateTab('task-tab');
   }
 
   addPlan(plan) {
     this.plan = plan;
-  }
-
-  renderTask() {
-    if (!this.task) {
-      return;
-    }
-
-    const taskTitle =
-      this.taskTitle || this.task.split(' ').slice(0, 4).join(' ') + (this.task.split(' ').length > 4 ? '...' : '');
-    document.getElementById('taskTitle').innerText = taskTitle;
-    document.getElementById('taskContainer').innerHTML = marked.parse(this.task);
   }
 
   async createTaskTitle() {
@@ -187,7 +175,6 @@ class Chat {
     document.getElementById('output').innerHTML = formattedMessages;
     viewController.scrollToBottom();
     viewController.addCopyCodeButtons();
-    this.renderTask();
     viewController.showWelcomeContent();
     viewController.activateTooltips();
   }

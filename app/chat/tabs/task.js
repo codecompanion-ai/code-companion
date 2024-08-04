@@ -1,4 +1,5 @@
 const path = require('path');
+const marked = require('marked');
 
 class TaskTab {
   constructor(chatController) {
@@ -17,14 +18,11 @@ class TaskTab {
   }
 
   showLoadingIndicator() {
-    viewController.updateLoadingIndicator(true, 'Doing some research and planning...');
+    viewController.updateLoadingIndicator(true, 'Analyzing task and project...');
     this.contextProjectDetailsContainer.innerHTML = `
-      <div class="d-flex justify-content-center align-items-center h-100">
-        <div class="text-center">
-          <div class="spinner-grow text-secondary" role="status">
-            <span class="visually-hidden">Loading...</span>
-          </div>
-          <p class="mt-3 text-secondary">Analyzing task and creating a plan...</p>
+      <div class="d-flex align-items-center mt-5">
+        <div class="spinner-grow spinner-grow-sm text-secondary" role="status">
+          <span class="visually-hidden">Loading...</span> Analyzing task and project...
         </div>
       </div>
     `;
@@ -38,7 +36,7 @@ class TaskTab {
     };
 
     for (const [key, value] of Object.entries(projectContext)) {
-      html += `<h4>${formatTitle(key)}</h4><hr><div class="ms-3">`;
+      html += `<h4>${formatTitle(key)}</h4><div class="ms-3">`;
       if (typeof value === 'string') {
         html += `<p class="ms-3">${value}</p>`;
       } else if (Array.isArray(value)) {
@@ -74,6 +72,7 @@ class TaskTab {
     }
     this.contextProjectDetailsContainer.innerHTML = html;
   }
+
   async renderContextFiles(files) {
     if (!files || files.length === 0) {
       this.contextFilesContainer.innerHTML = '<p class="text-muted">No context files available.</p>';
@@ -89,6 +88,20 @@ class TaskTab {
     });
     html += '</ul>';
     this.contextFilesContainer.innerHTML = html;
+  }
+
+  renderTask(task, taskTitle) {
+    if (!task) {
+      document.getElementById('taskTitle').innerText = 'New task';
+      document.getElementById('taskContainer').innerHTML =
+        '<div class="text-secondary">Provide task details in the chat input to start a new task</div>';
+      return;
+    }
+
+    const displayTitle =
+      taskTitle || (task.split(' ').length > 4 ? task.split(' ').slice(0, 4).join(' ') + '...' : task);
+    document.getElementById('taskTitle').innerText = displayTitle;
+    document.getElementById('taskContainer').innerHTML = marked.parse(task);
   }
 }
 

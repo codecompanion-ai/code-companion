@@ -93,10 +93,6 @@ document.getElementById('reject_button').addEventListener('click', function () {
   chatController.agent.userDecision = 'reject';
 });
 
-document.getElementById('reflect_button').addEventListener('click', function () {
-  chatController.agent.userDecision = 'reflect';
-});
-
 document.getElementById('approve_button').addEventListener('click', function () {
   chatController.agent.userDecision = 'approve';
 });

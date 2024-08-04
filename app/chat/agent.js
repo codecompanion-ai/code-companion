@@ -26,11 +26,11 @@ class Agent {
       chatController.chat.addBackendMessage('assistant', apiResponseMessage.content, toolCalls);
 
       if (toolCalls && toolCalls.length > 0) {
-        const { decision, reflectMessage } = await this.runTools(toolCalls);
+        const { decision } = await this.runTools(toolCalls);
         this.userDecision = null;
 
         if (decision !== 'reject') {
-          await chatController.process('', false, reflectMessage);
+          await chatController.process('', false);
         }
       }
     } catch (error) {
@@ -72,14 +72,12 @@ class Agent {
           functionName,
           toolCall.id,
         );
-        return { decision: 'reject', reflectMessage: null };
-      } else if (decision === 'reflect') {
-        return { decision: 'reflect', reflectMessage: toolCall };
+        return { decision: 'reject' };
       }
     }
 
     this.projectController.git?.updateTabIcon();
-    return { decision: 'approve', reflectMessage: null };
+    return { decision: 'approve' };
   }
 
   async isToolAllowedToExecute(toolCall) {

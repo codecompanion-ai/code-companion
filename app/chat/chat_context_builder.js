@@ -29,25 +29,18 @@ class ChatContextBuilder {
     this.isComplexTask = false;
   }
 
-  async buildMessages(userMessage, reflectMessage = null) {
+  async buildMessages(userMessage) {
     this.backendMessages = this.chat.backendMessages.map((message) => _.omit(message, ['id']));
     this.processTaskContext();
-    return [await this.addSystemMessage(), await this.addUserMessage(userMessage, reflectMessage)];
+    return [await this.addSystemMessage(), await this.addUserMessage(userMessage)];
   }
 
-  async addUserMessage(userMessage, reflectMessage) {
+  async addUserMessage(userMessage) {
     const conversationSummary = await this.addSummaryOfMessages();
     const lastUserMessage = this.addLastUserMessage(userMessage);
-    const reflectMessageResult = this.addReflectMessage(reflectMessage);
     const relevantSourceCodeInformation = await this.relevantSourceCodeInformation();
 
-    const textContent = [
-      this.addTaskMessage(),
-      conversationSummary,
-      lastUserMessage,
-      relevantSourceCodeInformation,
-      reflectMessageResult,
-    ]
+    const textContent = [this.addTaskMessage(), conversationSummary, lastUserMessage, relevantSourceCodeInformation]
       .filter(Boolean)
       .join('\n');
 
@@ -267,10 +260,9 @@ class ChatContextBuilder {
 
   async relevantSourceCodeInformation() {
     const projetState = await this.projectStateToText();
-    const relevantFilesAndFoldersToUserMessages = await this.getRelevantFilesAndFoldersToUserMessages();
     const relevantFilesContents = await this.getRelevantFilesContents();
 
-    return `${projetState}${relevantFilesAndFoldersToUserMessages}${relevantFilesContents}`;
+    return `${projetState}${relevantFilesContents}`;
   }
 
   async getRelevantFilesContents() {
@@ -419,21 +411,6 @@ class ChatContextBuilder {
     }
 
     return userMessage ? `<user>${userMessage}</user>\n` : '';
-  }
-
-  addReflectMessage(reflectMessage) {
-    if (!reflectMessage) {
-      return null;
-    }
-
-    return `
-      "assistant" proposed this change:
-      
-      ${JSON.stringify(reflectMessage, null, 2)}
-      
-      This can be improved.
-      First step by step explain how code/commamnd can be improved or fixed, what bugs it has, what was not implemented correctly or fully, and what may not work.
-      Then run the same tool but with improved code/command based on your explanation. Only provide code/command in the tool not in message content`;
   }
 
   fromTemplate(content, placeholder, value) {

@@ -166,7 +166,7 @@ class ChatController {
     this.process('', false);
   }
 
-  async process(query, renderUserMessage = true, reflectMessage = null) {
+  async process(query, renderUserMessage = true) {
     let apiResponse;
     document.getElementById('retry_button').setAttribute('hidden', true);
 
@@ -199,7 +199,7 @@ class ChatController {
     try {
       this.isProcessing = true;
       viewController.updateLoadingIndicator(true, '');
-      const messages = await this.chat.chatContextBuilder.buildMessages(query, reflectMessage);
+      const messages = await this.chat.chatContextBuilder.buildMessages(query);
       const tools = this.chat.chatContextBuilder.taskNeedsPlan ? planningTools() : allEnabledTools();
       apiResponse = await this.model.call({ messages, model: this.settings.selectedModel, tools });
       this.updateUsage(apiResponse.usage);

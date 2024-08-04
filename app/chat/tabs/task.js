@@ -20,10 +20,11 @@ class TaskTab {
   showLoadingIndicator() {
     viewController.updateLoadingIndicator(true, 'Analyzing task and project...');
     this.contextProjectDetailsContainer.innerHTML = `
-      <div class="d-flex align-items-center mt-5">
-        <div class="spinner-grow spinner-grow-sm text-secondary" role="status">
-          <span class="visually-hidden">Loading...</span> Analyzing task and project...
+      <div class="d-flex align-items-center mt-5 text-secondary">
+        <div class="spinner-grow spinner-grow-sm me-2" role="status">
+          <span class="visually-hidden">Loading...</span>
         </div>
+        <span>Analyzing task and project...</span>
       </div>
     `;
   }

@@ -31,7 +31,7 @@ class ChatContextBuilder {
 
   async buildMessages(userMessage, reflectMessage = null) {
     this.backendMessages = this.chat.backendMessages.map((message) => _.omit(message, ['id']));
-
+    this.processTaskContext();
     return [await this.addSystemMessage(), await this.addUserMessage(userMessage, reflectMessage)];
   }
 
@@ -43,7 +43,6 @@ class ChatContextBuilder {
 
     const textContent = [
       this.addTaskMessage(),
-      this.addPlanMessage(),
       conversationSummary,
       lastUserMessage,
       relevantSourceCodeInformation,
@@ -130,8 +129,13 @@ class ChatContextBuilder {
     return `<task>\n${this.chat.task}\n</task>\n`;
   }
 
-  addPlanMessage() {
-    return `<additional_information>\n${JSON.stringify(this.chat.plan)}\n</additional_information>\n`;
+  processTaskContext() {
+    const taskRelevantFiles = this.chat.plan['task_relevant_files'];
+    if (taskRelevantFiles) {
+      const directly_related_files = taskRelevantFiles.directly_related_files;
+      this.taskRelevantFiles = [...this.taskRelevantFiles, ...directly_related_files];
+      console.log('taskRelevantFiles', taskRelevantFiles);
+    }
   }
 
   addProjectCustomInstructionsMessage() {

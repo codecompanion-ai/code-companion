@@ -2,11 +2,17 @@ const researchItems = [
   {
     name: 'project_overview',
     description: `Gather a high-level overview of the project.`,
-    prompt: `Provide a concise overview of the project. Use information from README files, package.json files, and other relevant files.`,
+    prompt: `Provide a concise overview of the project. Use information from README files, package.json files, and other relevant files. Only provide information that was found in the files, otherwise set to null`,
     outputFormat: {
       project_name: { type: 'string' },
-      project_purpose: { type: 'string' },
-      primary_technologies: { type: 'array', items: { type: 'string' } },
+      primary_technologies: {
+        type: 'array',
+        items: { type: 'string', description: 'name and version if available, eg. "React 18.2.0"' },
+      },
+      project_type: {
+        type: 'string',
+        description: 'The type of project, e.g. "web", "mobile app", "chrome extension"',
+      },
       installation_instructions: { type: 'string' },
       launch_instructions: { type: 'string' },
     },

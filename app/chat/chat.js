@@ -39,7 +39,7 @@ class Chat {
 
   async addTask(task) {
     this.task = task;
-    chatController.taskTab.renderTask(task, task);
+    chatController.taskTab.renderTask(task);
     viewController.activateTab('task-tab');
   }
 

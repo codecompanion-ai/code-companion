@@ -12,9 +12,9 @@ class TaskTab {
     const projectContext = Object.fromEntries(
       Object.entries(taskContext).filter(([key]) => key !== 'task_relevant_files'),
     );
-    const taskRelevantFiles = taskContext['task_relevant_files'];
+    const taskContextFiles = taskContext['task_relevant_files'];
     this.renderProjectContext(projectContext);
-    await this.renderContextFiles(taskRelevantFiles?.directly_related_files);
+    await this.renderContextFiles(taskContextFiles?.directly_related_files);
   }
 
   renderProjectContext(projectContext) {

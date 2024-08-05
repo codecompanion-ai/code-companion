@@ -29,7 +29,6 @@ class BackgroundTask {
       const tool = this.buildTool(format);
       log('BackgroundTask:');
       const response = await this.client.call({ messages, tool });
-      this.chatController.updateUsage(response.usage);
       return response.tool_calls[0].function.arguments.result;
     } catch (error) {
       console.error(error);

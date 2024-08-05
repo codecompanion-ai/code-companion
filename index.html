@@ -264,8 +264,23 @@
               <div id="taskContainer" class="ms-3">
                 <div class="text-secondary">Provide task details in the chat input to start a new task</div>
               </div>
-              <div id="contextFilesContainer" class="mt-3"></div>
-              <div id="contextProjectDetailsContainer" class="mt-3"></div>
+              <div class="mt-3">
+                <button
+                  class="btn btn-link d-flex align-items-center w-100"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#contextCollapse"
+                  aria-expanded="false"
+                  aria-controls="contextCollapse"
+                >
+                  <span>Context</span>
+                  <i class="bi bi-chevron-down ms-2 collapse-icon"></i>
+                </button>
+                <div class="collapse" id="contextCollapse">
+                  <div id="contextFilesContainer" class="mt-3"></div>
+                  <div id="contextProjectDetailsContainer" class="mt-3"></div>
+                </div>
+              </div>
             </div>
             <div class="tab-pane fade h-100" id="browser" role="tabpanel" aria-labelledby="browser-tab">
               <div class="border-bottom d-flex align-items-center p-2">
@@ -422,6 +437,17 @@
                 />
 
                 <div>
+                  <button
+                    class="btn btn-link p-0 mt-2 text-secondary text-decoration-none d-flex align-items-center"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#baseUrlCollapse"
+                    aria-expanded="false"
+                    aria-controls="baseUrlCollapse"
+                  >
+                    <span>Custom API Endpoint</span>
+                    <i class="bi bi-chevron-down ms-2 collapse-icon"></i>
+                  </button>
                   <div class="collapse" id="baseUrlCollapse">
                     <label for="baseUrl" class="form-label mt-3 fw-bolder">OpenAI API Endpoint URL:</label>
                     <input
@@ -432,16 +458,6 @@
                       onchange="chatController.saveSetting('baseUrl');"
                     />
                   </div>
-                  <button
-                    class="btn btn-link p-0 mt-2 text-secondary text-decoration-none"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#baseUrlCollapse"
-                    aria-expanded="false"
-                    aria-controls="baseUrlCollapse"
-                  >
-                    Custom API Endpoint <i class="bi bi-chevron-right"></i>
-                  </button>
                 </div>
 
                 <label for="anthropicApiKey" class="form-label mt-3 fw-bolder">Anthropic API Key:</label>

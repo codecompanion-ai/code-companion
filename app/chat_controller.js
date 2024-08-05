@@ -200,9 +200,8 @@ class ChatController {
       this.isProcessing = true;
       viewController.updateLoadingIndicator(true, '');
       const messages = await this.chat.chatContextBuilder.buildMessages(query);
-      const tools = this.chat.chatContextBuilder.taskNeedsPlan ? planningTools() : allEnabledTools();
+      const tools = allEnabledTools();
       apiResponse = await this.model.call({ messages, model: this.settings.selectedModel, tools });
-      this.updateUsage(apiResponse.usage);
     } catch (error) {
       this.handleError(error);
     } finally {
@@ -268,6 +267,7 @@ class ChatController {
   async processNewUserMessage(userMessage) {
     if (this.chat.isEmpty() || this.chat.onlyHasImages()) {
       document.getElementById('projectsCard').innerHTML = '';
+      document.getElementById('messageInput').setAttribute('placeholder', 'Send message...');
       this.chat.addTask(userMessage);
       this.chat.taskContext = await new Planner(this).run(userMessage);
       await this.process();

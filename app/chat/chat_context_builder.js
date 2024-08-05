@@ -22,13 +22,12 @@ class ChatContextBuilder {
     this.lastMessageIdForRelevantFiles = 0;
     this.reduceRelevantFilesContextMessageId = 0;
     this.lastEditedFilesTimestamp = chat.startTimestamp;
-    this.taskRelevantFiles = [];
+    this.taskContextFiles = [];
     this.pastSummarizedMessages = '';
   }
 
   async buildMessages(userMessage) {
     this.backendMessages = this.chat.backendMessages.map((message) => _.omit(message, ['id']));
-    this.processTaskContext();
     return [await this.addSystemMessage(), await this.addUserMessage(userMessage)];
   }
 
@@ -86,14 +85,6 @@ class ChatContextBuilder {
 
   addTaskMessage() {
     return `<task>\n${this.chat.task}\n</task>\n`;
-  }
-
-  processTaskContext() {
-    const taskContext = this.chat.taskContext;
-    if (taskContext) {
-      const directly_related_files = taskContext.taskRelevantFiles?.directly_related_files || [];
-      this.taskRelevantFiles = [...new Set([...this.taskRelevantFiles, ...directly_related_files])];
-    }
   }
 
   addProjectCustomInstructionsMessage() {
@@ -248,11 +239,11 @@ class ChatContextBuilder {
     const chatInteractionFiles = await this.getChatInteractionFiles();
     const editedFiles = chatController.agent.projectController.getRecentModifiedFiles(this.lastEditedFilesTimestamp);
     this.lastEditedFilesTimestamp = Date.now();
-    const combinedFiles = [...new Set([...chatInteractionFiles, ...this.taskRelevantFiles, ...editedFiles])].slice(
+    const combinedFiles = [...new Set([...chatInteractionFiles, ...this.taskContextFiles, ...editedFiles])].slice(
       0,
       20,
     );
-    this.taskRelevantFiles = combinedFiles;
+    this.taskContextFiles = combinedFiles;
 
     return combinedFiles;
   }
@@ -303,7 +294,7 @@ class ChatContextBuilder {
       const relevantFiles = await this.updateListOfRelevantFiles(fileContents);
       if (Array.isArray(relevantFiles)) {
         console.log('Reducing relevant files context', relevantFiles);
-        this.taskRelevantFiles = relevantFiles.slice(0, MAX_RELEVANT_FILES_COUNT);
+        this.taskContextFiles = relevantFiles.slice(0, MAX_RELEVANT_FILES_COUNT);
         return await this.getFileContents(relevantFiles);
       }
     }

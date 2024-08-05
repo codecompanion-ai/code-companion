@@ -12,6 +12,7 @@ class Planner {
     this.chatController.taskTab.renderTask(taskDescription, taskClassificationResult.concise_task_title);
     if (taskClassificationResult.project_status === 'existing' && taskClassificationResult.task_type === 'multi_step') {
       const taskContext = await this.performResearch(taskDescription);
+      this.updateTaskContextFiles(taskContext);
       this.chatController.taskTab.render(taskContext);
       return taskContext;
     }
@@ -33,6 +34,11 @@ class Planner {
 
     const researchResults = await Promise.all(researchPromises);
     return Object.assign({}, ...researchResults);
+  }
+
+  updateTaskContextFiles(taskContext) {
+    const chatContextBuilder = this.chatController.chat.chatContextBuilder;
+    chatContextBuilder.taskContextFiles = taskContext['task_relevant_files']?.directly_related_files || [];
   }
 }
 

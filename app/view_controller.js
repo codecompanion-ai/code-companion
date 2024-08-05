@@ -333,8 +333,13 @@ class ViewController {
 
   toogleChatInputContainer() {
     const chatInputContainer = document.getElementById('chatInputContainer');
-    chatInputContainer.style.display =
-      chatController.agent.projectController.currentProject === null ? 'none' : 'block';
+    const isVisible = chatController.agent.projectController.currentProject !== null;
+    chatInputContainer.style.display = isVisible ? 'block' : 'none';
+
+    if (isVisible) {
+      const chatInput = document.getElementById('messageInput');
+      chatInput.focus();
+    }
   }
 
   activateTooltips() {

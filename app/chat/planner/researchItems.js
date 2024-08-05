@@ -171,7 +171,7 @@ const taskClassification = {
     },
     concise_task_title: {
       type: 'string',
-      description: 'A brief, descriptive title for the task',
+      description: 'A brief title for the task. Max 4 words',
     },
   },
   additionalInformation: ['projectStructure', 'getTaskDescription'],

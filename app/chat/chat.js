@@ -40,38 +40,7 @@ class Chat {
   async addTask(task) {
     this.task = task;
     chatController.taskTab.renderTask(task, task);
-    await this.createTaskTitle();
-    chatController.taskTab.renderTask(task, this.taskTitle);
     viewController.activateTab('task-tab');
-  }
-
-  addPlan(plan) {
-    this.plan = plan;
-  }
-
-  async createTaskTitle() {
-    let taskTitle = '';
-
-    if (this.task.split(' ').length < 4) {
-      this.taskTitle = this.task;
-      return;
-    }
-
-    const prompt = `Create a concise, engaging task title (2-4 words) for the following task description:\n<task_description>\n${this.task}\n</task_description>`;
-    const format = {
-      type: 'string',
-      result: 'Shortened task title',
-    };
-
-    try {
-      taskTitle = await chatController.backgroundTask.run({ prompt, format });
-    } catch (error) {
-      taskTitle = this.task.split(' ').slice(0, 4).join(' ') + (this.task.split(' ').length > 4 ? '...' : ''); // Fallback task title
-    }
-
-    if (taskTitle) {
-      this.taskTitle = taskTitle;
-    }
   }
 
   getLastUserMessage() {

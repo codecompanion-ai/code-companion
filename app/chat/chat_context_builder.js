@@ -24,9 +24,6 @@ class ChatContextBuilder {
     this.lastEditedFilesTimestamp = chat.startTimestamp;
     this.taskRelevantFiles = [];
     this.pastSummarizedMessages = '';
-    this.searchRelevantFiles = false;
-    this.taskNeedsPlan = false;
-    this.isComplexTask = false;
   }
 
   async buildMessages(userMessage) {
@@ -71,20 +68,9 @@ class ChatContextBuilder {
 
   async addSystemMessage() {
     let systemMessage;
+    systemMessage = TASK_EXECUTION_PROMPT_TEMPLATE;
 
-    if (
-      (this.taskNeedsPlan && this.chat.countOfUserMessages() === 0) ||
-      (this.chat.isEmpty() && (await this.isTaskNeedsPlan()))
-    ) {
-      this.taskNeedsPlan = true;
-      this.isComplexTask = true;
-      systemMessage = PLAN_PROMPT_TEMPLATE;
-    } else {
-      this.taskNeedsPlan = false;
-      systemMessage = TASK_EXECUTION_PROMPT_TEMPLATE;
-    }
-
-    if (this.chat.backendMessages.length > 7 || !this.isComplexTask) {
+    if (this.chat.backendMessages.length > 7) {
       systemMessage += `\n\n${FINISH_TASK_PROMPT_TEMPLATE}`;
     }
 
@@ -98,36 +84,15 @@ class ChatContextBuilder {
     };
   }
 
-  async isTaskNeedsPlan() {
-    const prompt = `
-    Task:
-    "${this.chat.task}"\n
-    Will this user task need to be brainstormed and planned before execution? Respond false if this is a simple task that involves only a few commands or one file manipulation.`;
-
-    const format = {
-      type: 'boolean',
-      result: 'true or false',
-    };
-
-    const result = await chatController.backgroundTask.run({
-      prompt,
-      format,
-      model: chatController.settings.selectedModel,
-    });
-
-    return result;
-  }
-
   addTaskMessage() {
     return `<task>\n${this.chat.task}\n</task>\n`;
   }
 
   processTaskContext() {
-    const taskRelevantFiles = this.chat.plan['task_relevant_files'];
-    if (taskRelevantFiles) {
-      const directly_related_files = taskRelevantFiles.directly_related_files;
+    const taskContext = this.chat.taskContext;
+    if (taskContext) {
+      const directly_related_files = taskContext.taskRelevantFiles?.directly_related_files || [];
       this.taskRelevantFiles = [...new Set([...this.taskRelevantFiles, ...directly_related_files])];
-      console.log('taskRelevantFiles', taskRelevantFiles);
     }
   }
 

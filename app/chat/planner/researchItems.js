@@ -151,4 +151,30 @@ const researchItems = [
   // },
 ];
 
-module.exports = researchItems;
+const taskClassification = {
+  name: 'task_classification',
+  prompt: `
+    Analyze the given task description and project context to classify the task.
+    Determine if this is a new or existing project, whether the task is simple or multi-step, and provide a concise title for the task.
+    Use the provided project structure and task description to inform your classification. Consider the complexity of the task, the current state of the project, and the specific requirements mentioned in the task description.
+  `,
+  outputFormat: {
+    project_status: {
+      type: 'string',
+      enum: ['new', 'existing'],
+      description: 'Whether the project is new or existing',
+    },
+    task_type: {
+      type: 'string',
+      enum: ['simple', 'multi_step'],
+      description: 'Whether the task is simple or multi-step',
+    },
+    concise_task_title: {
+      type: 'string',
+      description: 'A brief, descriptive title for the task',
+    },
+  },
+  additionalInformation: ['projectStructure', 'getTaskDescription'],
+};
+
+module.exports = { researchItems, taskClassification };

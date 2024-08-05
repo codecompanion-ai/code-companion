@@ -266,11 +266,10 @@ class ChatController {
   }
 
   async processNewUserMessage(userMessage) {
-    // only submitted form UI
     if (this.chat.isEmpty() || this.chat.onlyHasImages()) {
-      this.chat.addTask(userMessage);
-      this.chat.addPlan(await new Planner(this).run(userMessage));
       document.getElementById('projectsCard').innerHTML = '';
+      this.chat.addTask(userMessage);
+      this.chat.taskContext = await new Planner(this).run(userMessage);
       await this.process();
     } else {
       await this.process(userMessage);

@@ -1,4 +1,4 @@
-const researchItems = require('./researchItems');
+const { researchItems, taskClassification } = require('./researchItems');
 const ResearchAgent = require('./researchAgent');
 
 class Planner {
@@ -7,20 +7,24 @@ class Planner {
   }
 
   async run(taskDescription) {
-    this.chatController.taskTab.showLoadingIndicator();
-    // const taskType = this.classifyTask();
-    const researchItems = this.filterResearchItems();
-    const taskContext = await this.performResearch(researchItems, taskDescription);
-    // const plan = this.createPlan(researchResults);
-    this.chatController.taskTab.render(taskContext);
-    return taskContext;
+    viewController.updateLoadingIndicator(true, 'Analyzing task and project...');
+    const taskClassificationResult = await this.classifyTask(taskDescription);
+    this.chatController.taskTab.renderTask(taskDescription, taskClassificationResult.concise_task_title);
+    if (taskClassificationResult.project_status === 'existing' && taskClassificationResult.task_type === 'multi_step') {
+      const taskContext = await this.performResearch(taskDescription);
+      this.chatController.taskTab.render(taskContext);
+      return taskContext;
+    }
+    return null;
   }
 
-  filterResearchItems() {
-    return researchItems;
+  async classifyTask(taskDescription) {
+    const researchAgent = new ResearchAgent(this.chatController);
+    const result = await researchAgent.executeResearch(taskClassification, taskDescription);
+    return result;
   }
 
-  async performResearch(researchItems, taskDescription) {
+  async performResearch(taskDescription) {
     const researchPromises = researchItems.map(async (item) => {
       const researchAgent = new ResearchAgent(this.chatController);
       const result = await researchAgent.executeResearch(item, taskDescription);

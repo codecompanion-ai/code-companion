@@ -69,13 +69,11 @@ class ResearchAgent {
 
     const currentDirectory = await this.chatController.terminalSession.getCurrentDirectory();
     if (researchItem.additionalInformation) {
-      if (typeof this[researchItem.additionalInformation] === 'function') {
-        additionalInformation = await this[researchItem.additionalInformation]();
+      if (Array.isArray(researchItem.additionalInformation)) {
+        additionalInformation = await Promise.all(researchItem.additionalInformation.map((item) => this[item]()));
+        additionalInformation = additionalInformation.join('\n\n');
       } else {
-        console.error(
-          'ResearchAgent: additionalInformation function not available',
-          researchItem.additionalInformation,
-        );
+        additionalInformation = await this[researchItem.additionalInformation]();
       }
     }
 

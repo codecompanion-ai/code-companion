@@ -17,18 +17,6 @@ class TaskTab {
     await this.renderContextFiles(taskRelevantFiles?.directly_related_files);
   }
 
-  showLoadingIndicator() {
-    viewController.updateLoadingIndicator(true, 'Analyzing task and project...');
-    this.contextProjectDetailsContainer.innerHTML = `
-      <div class="d-flex align-items-center mt-5 text-secondary">
-        <div class="spinner-grow spinner-grow-sm me-2" role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-        <span>Analyzing task and project...</span>
-      </div>
-    `;
-  }
-
   renderProjectContext(projectContext) {
     let html = '';
 

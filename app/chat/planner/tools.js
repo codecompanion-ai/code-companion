@@ -56,6 +56,9 @@ async function readFiles({ filePaths }) {
       if (!fs.existsSync(filePath)) {
         return `File with filepath '${targetFile}' does not exist`;
       }
+      if (fs.statSync(filePath).isDirectory()) {
+        return `'${targetFile}' is a directory, not a file`;
+      }
       const content = fs.readFileSync(filePath, 'utf8');
       return `<filecontent filename="${filePath}">\n${content}\n</filecontent>`;
     }),

@@ -87,13 +87,11 @@ class AnthropicModel {
 
     const finalMessage = await stream.finalMessage();
     log('Raw response', finalMessage);
+    const usage = finalMessage.usage.input_tokens + finalMessage.usage.output_tokens;
+    this.chatController.updateUsage(usage, callParams.model);
     return {
       content: finalMessage.content.find((item) => item.type === 'text')?.text || '',
       tool_calls: this.formattedToolCalls(finalMessage.content),
-      usage: {
-        input_tokens: finalMessage.usage.input_tokens,
-        output_tokens: finalMessage.usage.output_tokens,
-      },
     };
   }
 
@@ -105,13 +103,11 @@ class AnthropicModel {
     log('Calling model API:', callParams);
     const response = await this.client.messages.create(callParams, this.options);
     log('Raw response', response);
+    const usage = response.usage.input_tokens + response.usage.output_tokens;
+    this.chatController.updateUsage(usage, callParams.model);
     return {
       content: response.content.filter((item) => item.type === 'text')?.[0]?.text || '',
       tool_calls: this.formattedToolCalls(response.content),
-      usage: {
-        input_tokens: response.usage.input_tokens,
-        output_tokens: response.usage.output_tokens,
-      },
     };
   }
 

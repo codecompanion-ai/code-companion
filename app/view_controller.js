@@ -229,20 +229,22 @@ class ViewController {
   }
 
   updateFooterMessage(message) {
-    const formatTokens = (tokens) => (tokens >= 1000 ? (tokens / 1000).toFixed(1) + 'K' : tokens);
-
-    const usageMessage = this.getUsageMessage(formatTokens);
+    const usageMessage = this.getUsageMessage();
     const combinedMessage = this.combineMessages(message, usageMessage);
 
     this.setFooterMessage(combinedMessage);
   }
 
-  getUsageMessage(formatTokens) {
-    const { input_tokens, output_tokens, total_tokens } = chatController.usage;
-    if (total_tokens > 0) {
-      return `Last input: ${formatTokens(input_tokens)}, output: ${formatTokens(output_tokens)}. Total this task: ${formatTokens(total_tokens)} tokens`;
-    }
-    return '';
+  getUsageMessage() {
+    const formatTokens = (tokens) => (tokens >= 1000 ? (tokens / 1000).toFixed(1) + 'K' : tokens);
+    if (!chatController.usage || Object.keys(chatController.usage).length === 0) return '';
+
+    return (
+      'Tokens: ' +
+      Object.entries(chatController.usage)
+        .map(([model, tokens]) => `${model}: ${formatTokens(tokens)}`)
+        .join(' | ')
+    );
   }
 
   combineMessages(message, usageMessage) {

@@ -61,14 +61,11 @@ class OpenAIModel {
       }
     }
     log('Raw response', fullContent, toolCalls);
-
+    const usage = getTokenCount(callParams.messages) + getTokenCount(fullContent);
+    this.chatController.updateUsage(usage, callParams.model);
     return {
       content: fullContent,
       tool_calls: this.formattedToolCalls(toolCalls),
-      usage: {
-        input_tokens: getTokenCount(callParams.messages),
-        output_tokens: getTokenCount(fullContent),
-      },
     };
   }
 
@@ -96,13 +93,11 @@ class OpenAIModel {
       signal: this.chatController.abortController.signal,
     });
     log('Raw response', chatCompletion);
+    const usage = chatCompletion.usage?.prompt_tokens + chatCompletion.usage?.completion_tokens;
+    this.chatController.updateUsage(usage, callParams.model);
     return {
       content: chatCompletion.choices[0].message.content,
       tool_calls: this.formattedToolCalls(chatCompletion.choices[0].message.tool_calls),
-      usage: {
-        input_tokens: chatCompletion.usage?.prompt_tokens,
-        output_tokens: chatCompletion.usage?.completion_tokens,
-      },
     };
   }
 

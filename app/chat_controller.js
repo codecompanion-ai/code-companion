@@ -45,12 +45,7 @@ class ChatController {
     this.browser = new Browser();
     this.taskTab = new TaskTab(this);
     this.processMessageChange = this.processMessageChange.bind(this);
-    this.submitMessage = this.submitMessage.bind(this);
-    this.usage = {
-      input_tokens: 0,
-      output_tokens: 0,
-      total_tokens: 0,
-    };
+    this.usage = {};
   }
 
   loadAllSettings() {
@@ -212,14 +207,10 @@ class ChatController {
     await this.agent.runAgent(apiResponse);
   }
 
-  updateUsage(usage) {
+  updateUsage(usage, model) {
     if (!usage) return;
 
-    this.usage = {
-      input_tokens: usage.input_tokens,
-      output_tokens: usage.output_tokens,
-      total_tokens: this.usage.total_tokens + usage.input_tokens + usage.output_tokens,
-    };
+    this.usage[model] = this.usage[model] ? this.usage[model] + usage : usage;
     viewController.updateFooterMessage();
   }
 
@@ -308,11 +299,7 @@ class ChatController {
     this.taskTab.renderTask(null, 'New task');
     document.getElementById('messageInput').setAttribute('placeholder', 'Provide task details...');
     this.stopProcess = false;
-    this.usage = {
-      input_tokens: 0,
-      output_tokens: 0,
-      total_tokens: 0,
-    };
+    this.usage = {};
     viewController.updateFooterMessage();
     viewController.showWelcomeContent();
     viewController.toogleChatInputContainer();

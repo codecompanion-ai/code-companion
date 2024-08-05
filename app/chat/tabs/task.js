@@ -44,12 +44,11 @@ class TaskTab {
 
   generateContextFilesHTML(relativePaths) {
     return `
-    <h5>Files</h5>
     <ul class="list-group list-group-flush">
       ${relativePaths
         .map(
           ({ path: relativePath, enabled, fullPath }) => `
-        <li class="list-group-item d-flex justify-content-between align-items-center">
+        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
           ${relativePath}
           <div class="form-check form-switch">
             <input class="form-check-input context-file-checkbox" type="checkbox" role="switch" 

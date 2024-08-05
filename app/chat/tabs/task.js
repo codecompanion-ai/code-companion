@@ -8,76 +8,72 @@ class TaskTab {
     this.contextFilesContainer = document.getElementById('contextFilesContainer');
   }
 
-  async render(taskContext) {
-    const projectContext = Object.fromEntries(
-      Object.entries(taskContext).filter(([key]) => key !== 'task_relevant_files'),
-    );
-    const taskContextFiles = taskContext['task_relevant_files'];
-    this.renderProjectContext(projectContext);
-    await this.renderContextFiles(taskContextFiles?.directly_related_files);
+  async render() {
+    const taskContext = this.chatController.chat.taskContext;
+    this.renderProjectContext(taskContext);
+    this.renderContextFiles();
   }
 
   renderProjectContext(projectContext) {
-    let html = '';
-
-    const formatTitle = (title) => {
-      return title.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-    };
-
-    for (const [key, value] of Object.entries(projectContext)) {
-      html += `<h4>${formatTitle(key)}</h4><div class="ms-3">`;
-      if (typeof value === 'string') {
-        html += `<p class="ms-3">${value}</p>`;
-      } else if (Array.isArray(value)) {
-        html += '<ul>';
-        value.forEach((item) => {
-          html += `<li>${item}</li>`;
-        });
-        html += '</ul>';
-      } else if (typeof value === 'object') {
-        for (const [subKey, subValue] of Object.entries(value)) {
-          if (subValue === null) continue;
-          html += `<h5>${formatTitle(subKey)}</h5>`;
-          if (typeof subValue === 'string') {
-            html += `<p class="ms-3">${subValue}</p>`;
-          } else if (Array.isArray(subValue)) {
-            html += '<ul>';
-            subValue.forEach((item) => {
-              if (typeof item === 'object') {
-                html += '<li>';
-                for (const [itemKey, itemValue] of Object.entries(item)) {
-                  html += `<strong>${itemKey}:</strong> ${itemValue}<br>`;
-                }
-                html += '</li>';
-              } else {
-                html += `<li>${item}</li>`;
-              }
-            });
-            html += '</ul>';
-          }
-        }
-      }
-      html += '</div>';
-    }
-    this.contextProjectDetailsContainer.innerHTML = html;
+    this.contextProjectDetailsContainer.innerHTML = marked.parse(projectContext);
   }
 
-  async renderContextFiles(files) {
-    if (!files || files.length === 0) {
+  async renderContextFiles() {
+    const taskContextFiles = this.chatController.chat.chatContextBuilder.taskContextFiles;
+    if (!taskContextFiles || Object.keys(taskContextFiles).length === 0) {
       this.contextFilesContainer.innerHTML = '<p class="text-muted">No context files available.</p>';
       return;
     }
 
     const baseDirectory = await this.chatController.terminalSession.getCurrentDirectory();
-    const relativePaths = files.map((file) => path.relative(baseDirectory, file)).sort();
+    const relativePaths = this.getRelativePaths(taskContextFiles, baseDirectory);
 
-    let html = '<ul class="list-group list-group-flush">';
-    relativePaths.forEach((relativePath) => {
-      html += `<li class="list-group-item">${relativePath}</li>`;
-    });
-    html += '</ul>';
-    this.contextFilesContainer.innerHTML = html;
+    this.contextFilesContainer.innerHTML = this.generateContextFilesHTML(relativePaths);
+    this.setupContextFilesEventListener();
   }
+
+  getRelativePaths(taskContextFiles, baseDirectory) {
+    return Object.entries(taskContextFiles)
+      .map(([file, enabled]) => ({
+        path: path.relative(baseDirectory, file),
+        enabled,
+        fullPath: file,
+      }))
+      .sort((a, b) => a.path.localeCompare(b.path));
+  }
+
+  generateContextFilesHTML(relativePaths) {
+    return `
+    <h5>Files</h5>
+    <ul class="list-group list-group-flush">
+      ${relativePaths
+        .map(
+          ({ path: relativePath, enabled, fullPath }) => `
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          ${relativePath}
+          <div class="form-check form-switch">
+            <input class="form-check-input context-file-checkbox" type="checkbox" role="switch" 
+              data-full-path="${fullPath.replace(/\\/g, '\\\\')}" ${enabled ? 'checked' : ''}>
+          </div>
+        </li>
+      `,
+        )
+        .join('')}
+    </ul>
+  `;
+  }
+
+  setupContextFilesEventListener() {
+    this.contextFilesContainer.removeEventListener('change', this.handleContextFileChange);
+    this.contextFilesContainer.addEventListener('change', this.handleContextFileChange);
+  }
+
+  handleContextFileChange = async (event) => {
+    if (event.target.classList.contains('context-file-checkbox')) {
+      const fullPath = event.target.dataset.fullPath;
+      this.chatController.chat.chatContextBuilder.updateTaskContextFile(fullPath, event.target.checked);
+    }
+  };
 
   renderTask(task, taskTitle) {
     if (!task) {

@@ -22,7 +22,10 @@ class ResearchAgent {
   }
 
   async executeResearch(researchItem, taskDescription) {
-    console.log('executeResearch', researchItem, taskDescription);
+    if (researchItem.cache && this.getCache(researchItem.name)) {
+      return this.getCache(researchItem.name);
+    }
+
     this.taskDescription = taskDescription;
     const messages = await this.initializeMessages(researchItem);
     const availableTools = tools(researchItem.outputFormat);
@@ -50,7 +53,9 @@ class ResearchAgent {
       if (response.tool_calls) {
         const result = await this.handleToolCalls(response.tool_calls, availableTools, messages);
         if (result) {
-          console.log('executeResearch: result', result);
+          if (researchItem.cache) {
+            this.setCache(researchItem.name, result);
+          }
           return result;
         }
       } else if (response.content) {
@@ -137,6 +142,16 @@ class ResearchAgent {
 
   getTaskDescription() {
     return `<taskDescription>\n${this.taskDescription}\n</taskDescription>`;
+  }
+
+  setCache(key, value) {
+    const projectKey = this.chatController.agent.projectController.currentProject.path + '-' + key;
+    cache.set(projectKey, value);
+  }
+
+  getCache(key) {
+    const projectKey = this.chatController.agent.projectController.currentProject.path + '-' + key;
+    return cache.get(projectKey);
   }
 }
 

@@ -22,8 +22,27 @@ class ChatContextBuilder {
     this.lastMessageIdForRelevantFiles = 0;
     this.reduceRelevantFilesContextMessageId = 0;
     this.lastEditedFilesTimestamp = chat.startTimestamp;
-    this.taskContextFiles = [];
+    this.taskContextFiles = {};
     this.pastSummarizedMessages = '';
+  }
+
+  updateTaskContextFile(fileName, enabled) {
+    this.taskContextFiles[fileName] = enabled;
+    chatController.taskTab.renderContextFiles();
+  }
+
+  getEnabledTaskContextFiles() {
+    const result = {};
+    Object.entries(this.taskContextFiles).forEach(([fileName, enabled]) => {
+      if (enabled) {
+        result[fileName] = true;
+      }
+    });
+    return result;
+  }
+
+  isTaskContextFileEnabled(fileName) {
+    return this.taskContextFiles[fileName] || false;
   }
 
   async buildMessages(userMessage) {
@@ -36,7 +55,13 @@ class ChatContextBuilder {
     const lastUserMessage = this.addLastUserMessage(userMessage);
     const relevantSourceCodeInformation = await this.relevantSourceCodeInformation();
 
-    const textContent = [this.addTaskMessage(), conversationSummary, lastUserMessage, relevantSourceCodeInformation]
+    const textContent = [
+      this.addTaskMessage(),
+      this.addTaskContextMessage(),
+      conversationSummary,
+      lastUserMessage,
+      relevantSourceCodeInformation,
+    ]
       .filter(Boolean)
       .join('\n');
 
@@ -85,6 +110,11 @@ class ChatContextBuilder {
 
   addTaskMessage() {
     return `<task>\n${this.chat.task}\n</task>\n`;
+  }
+
+  addTaskContextMessage() {
+    if (!this.chat.taskContext) return '';
+    return `<additional_context>\n${this.chat.taskContext}</additional_context>\n`;
   }
 
   addProjectCustomInstructionsMessage() {
@@ -239,13 +269,16 @@ class ChatContextBuilder {
     const chatInteractionFiles = await this.getChatInteractionFiles();
     const editedFiles = chatController.agent.projectController.getRecentModifiedFiles(this.lastEditedFilesTimestamp);
     this.lastEditedFilesTimestamp = Date.now();
-    const combinedFiles = [...new Set([...chatInteractionFiles, ...this.taskContextFiles, ...editedFiles])].slice(
-      0,
-      20,
-    );
-    this.taskContextFiles = combinedFiles;
+    const combinedFiles = [
+      ...new Set([...chatInteractionFiles, ...Object.keys(this.taskContextFiles), ...editedFiles]),
+    ];
+    combinedFiles.forEach((file) => {
+      if (!this.taskContextFiles.hasOwnProperty(file)) {
+        this.updateTaskContextFile(file, true);
+      }
+    });
 
-    return combinedFiles;
+    return Object.keys(this.getEnabledTaskContextFiles());
   }
 
   async getChatInteractionFiles() {
@@ -294,8 +327,10 @@ class ChatContextBuilder {
       const relevantFiles = await this.updateListOfRelevantFiles(fileContents);
       if (Array.isArray(relevantFiles)) {
         console.log('Reducing relevant files context', relevantFiles);
-        this.taskContextFiles = relevantFiles.slice(0, MAX_RELEVANT_FILES_COUNT);
-        return await this.getFileContents(relevantFiles);
+        relevantFiles.forEach((file, index) => {
+          this.updateTaskContextFile(file, index < MAX_RELEVANT_FILES_COUNT);
+        });
+        return await this.getFileContents(this.getEnabledTaskContextFiles());
       }
     }
 

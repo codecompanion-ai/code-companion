@@ -81,8 +81,8 @@ const researchItems = [
     If there are more than 20 code files, search codebase.
     Include those that are most likely needed to complete coding task`,
     outputFormat: {
-      directly_related_files: { type: 'array', items: { type: 'string', description: 'The file name' } },
-      potentially_related_files: { type: 'array', items: { type: 'string', description: 'The file name' } },
+      directly_related_files: { type: 'array', items: { type: 'string', description: 'Absolute file path' } },
+      potentially_related_files: { type: 'array', items: { type: 'string', description: 'Absolute file path' } },
     },
     additionalInformation: 'getTaskDescription',
     cache: false,
@@ -154,9 +154,30 @@ const researchItems = [
 const taskClassification = {
   name: 'task_classification',
   prompt: `
-    Analyze the given task description and project context to classify the task.
-    Determine if this is a new or existing project, whether the task is simple or multi-step, and provide a concise title for the task.
-    Use the provided project structure and task description to inform your classification. Consider the complexity of the task, the current state of the project, and the specific requirements mentioned in the task description.
+Task Classification Instructions:
+
+1. Project Status:
+   - Examine the project structure.
+   - Determine: Is this a new or existing project?
+
+2. Task Complexity:
+   - Analyze the task description carefully.
+   - Simple Task: Single action (e.g., committing changes, renaming a file).
+   - Multi-Step Task: Either requires some planning ormultiple actions or changes may be needed, or modifying several files. If you not sure, classify as multi_step.
+
+3. Task Title:
+   - Create a concise title (max 4 words).
+   - Capture the essence of the task.
+
+4. Considerations:
+   - Project's current state
+   - Specific task requirements
+   - Potential dependencies or implications
+
+5. Output:
+   - Classify project status: new/existing
+   - Determine task type: simple/multi-step
+   - Provide brief, descriptive task title
   `,
   outputFormat: {
     project_status: {

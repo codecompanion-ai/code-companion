@@ -269,7 +269,7 @@ class ChatController {
       document.getElementById('projectsCard').innerHTML = '';
       document.getElementById('messageInput').setAttribute('placeholder', 'Send message...');
       this.chat.addTask(userMessage);
-      this.chat.taskContext = await new Planner(this).run(userMessage);
+      await new Planner(this).run(userMessage);
       await this.process();
     } else {
       await this.process(userMessage);

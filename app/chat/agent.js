@@ -99,13 +99,11 @@ class Agent {
     }
 
     // check if file is in chat context
-    const chatContextFiles = chatController.chat.chatContextBuilder.taskContextFiles;
-    const fileInChatContext = chatContextFiles.includes(filePath);
-
+    const fileInChatContext = chatController.chat.chatContextBuilder.isTaskContextFileEnabled(filePath);
     if (fileInChatContext === false) {
       console.error('Tool rejected', toolCall);
       if (fileExists) {
-        chatController.chat.chatContextBuilder.taskContextFiles.push(filePath);
+        chatController.chat.chatContextBuilder.updateTaskContextFile(filePath, true);
       }
     }
 

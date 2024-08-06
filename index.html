@@ -264,20 +264,40 @@
               <div id="taskContainer" class="ms-3">
                 <div class="text-secondary">Provide task details in the chat input to start a new task</div>
               </div>
+              <h4 class="mt-3">Plan</h4>
+              <div id="taskPlanProgressContainer"></div>
+              <div id="taskPlanContainer" class="mt-3 px-3">
+                <span class="text-secondary">No plan created yet</span>
+              </div>
               <div class="mt-3">
                 <button
                   class="btn btn-link d-flex align-items-center w-100 text-secondary text-decoration-none px-0"
                   type="button"
                   data-bs-toggle="collapse"
-                  data-bs-target="#contextCollapse"
+                  data-bs-target="#filesContextCollapse"
                   aria-expanded="false"
-                  aria-controls="contextCollapse"
+                  aria-controls="filesContextCollapse"
                 >
-                  <span>Context</span>
+                  <span>Files context</span>
                   <i class="bi bi-chevron-down ms-2 collapse-icon"></i>
                 </button>
-                <div class="collapse px-3" id="contextCollapse">
+                <div class="collapse px-3" id="filesContextCollapse">
                   <div id="contextFilesContainer" class="mt-3"></div>
+                </div>
+              </div>
+              <div class="mt-3">
+                <button
+                  class="btn btn-link d-flex align-items-center w-100 text-secondary text-decoration-none px-0"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#projectContextCollapse"
+                  aria-expanded="false"
+                  aria-controls="projectContextCollapse"
+                >
+                  <span>Project context</span>
+                  <i class="bi bi-chevron-down ms-2 collapse-icon"></i>
+                </button>
+                <div class="collapse px-3" id="projectContextCollapse">
                   <div id="contextProjectDetailsContainer" class="mt-3"></div>
                 </div>
               </div>

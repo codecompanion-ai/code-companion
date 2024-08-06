@@ -1,4 +1,4 @@
-const { researchItems, taskClassification } = require('./researchItems');
+const { researchItems, taskClassification, taskPlan } = require('./researchItems');
 const ResearchAgent = require('./researchAgent');
 
 class Planner {
@@ -17,9 +17,15 @@ class Planner {
       this.chatController.chat.taskContext = this.formatTaskContextToMarkdown(taskContext);
       this.updateTaskContextFiles(taskContext);
       this.chatController.taskTab.render();
-      return taskContext;
     }
-    return null;
+
+    if (taskClassificationResult.task_type === 'multi_step') {
+      viewController.updateLoadingIndicator(true, 'Creating task plan...');
+      const planResult = await this.createPlan(taskDescription);
+      console.log('plan', planResult);
+      this.chatController.chat.taskPlan = planResult.plan.map((item) => ({ ...item, completed: false }));
+      this.chatController.taskTab.renderTaskPlan();
+    }
   }
 
   async classifyTask(taskDescription) {
@@ -37,6 +43,12 @@ class Planner {
 
     const researchResults = await Promise.all(researchPromises);
     return Object.assign({}, ...researchResults);
+  }
+
+  async createPlan(taskDescription) {
+    const researchAgent = new ResearchAgent(this.chatController);
+    const result = await researchAgent.executeResearch(taskPlan, taskDescription);
+    return result;
   }
 
   updateTaskContextFiles(taskContext) {

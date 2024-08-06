@@ -17,7 +17,6 @@ Current directory is '{currentDirectory}'.
 class ResearchAgent {
   constructor(chatController) {
     this.chatController = chatController;
-    this.model = chatController.smallModel;
     this.projectStructureCache;
   }
 
@@ -27,6 +26,7 @@ class ResearchAgent {
     }
 
     this.taskDescription = taskDescription;
+    this.model = researchItem.model === 'large' ? chatController.model : chatController.smallModel;
     const messages = await this.initializeMessages(researchItem);
     const availableTools = tools(researchItem.outputFormat);
     const formattedTools = availableTools.map(({ name, description, parameters }) => ({
@@ -34,14 +34,15 @@ class ResearchAgent {
       description,
       parameters,
     }));
+    const maxSteps = researchItem.maxSteps || MAX_STEPS;
 
-    for (let i = 0; i < MAX_STEPS; i++) {
+    for (let i = 0; i < maxSteps; i++) {
       log('ResearchAgent:');
       const callParams = {
         messages,
       };
 
-      if (i === MAX_STEPS - 1) {
+      if (i === maxSteps - 1) {
         // For final step, force output tool
         const outputTool = formattedTools.find((tool) => tool.name === 'output');
         callParams.tool = outputTool;
@@ -134,6 +135,14 @@ class ResearchAgent {
 
   getTaskDescription() {
     return `<taskDescription>\n${this.taskDescription}\n</taskDescription>`;
+  }
+
+  taskContext() {
+    return `<additionalContext>\n${this.chatController.chat.taskContext}\n</additionalContext>`;
+  }
+
+  async taskRelevantFilesContent() {
+    return await this.chatController.chat.chatContextBuilder.getRelevantFilesContents();
   }
 
   setCache(key, value) {

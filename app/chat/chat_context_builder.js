@@ -58,6 +58,7 @@ class ChatContextBuilder {
     const textContent = [
       this.addTaskMessage(),
       this.addTaskContextMessage(),
+      this.addTaskPlanMessage(),
       conversationSummary,
       lastUserMessage,
       relevantSourceCodeInformation,
@@ -115,6 +116,11 @@ class ChatContextBuilder {
   addTaskContextMessage() {
     if (!this.chat.taskContext) return '';
     return `<additional_context>\n${this.chat.taskContext}</additional_context>\n`;
+  }
+
+  addTaskPlanMessage() {
+    if (!this.chat.taskPlan) return '';
+    return `<task_plan>\n${this.chat.taskPlan}</task_plan>\n`;
   }
 
   addProjectCustomInstructionsMessage() {
@@ -292,7 +298,7 @@ class ChatContextBuilder {
     const chatInteractionFiles = normalizedFilePaths
       .filter((file) => fs.existsSync(file) && !fs.statSync(file).isDirectory())
       .reverse();
-    this.lastMessageIdForRelevantFiles = this.backendMessages.length - 1;
+    this.lastMessageIdForRelevantFiles = this.backendMessages ? this.backendMessages.length - 1 : 0;
 
     return chatInteractionFiles;
   }

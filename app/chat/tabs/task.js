@@ -7,6 +7,8 @@ class TaskTab {
     this.chatController = chatController;
     this.contextProjectDetailsContainer = document.getElementById('contextProjectDetailsContainer');
     this.contextFilesContainer = document.getElementById('contextFilesContainer');
+    this.taskPlanContainer = document.getElementById('taskPlanContainer');
+    this.taskPlanProgressContainer = document.getElementById('taskPlanProgressContainer');
   }
 
   render() {
@@ -60,6 +62,68 @@ class TaskTab {
       ${listItems.join('')}
     </ul>
   `;
+  }
+
+  renderTaskPlan() {
+    const taskPlan = this.chatController.chat.taskPlan;
+    if (!taskPlan) {
+      this.taskPlanContainer.innerHTML = '<span class="text-muted">No plan needed for this task</span>';
+      return;
+    }
+
+    this.renderProgressBar();
+
+    const planHtml = taskPlan
+      .map(
+        (step, index) => `
+      <div class="card mb-2">
+        <div class="card-header d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapse-${index}" aria-expanded="false" aria-controls="collapse-${index}" style="cursor: pointer;">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="step-${index}" ${step.completed ? 'checked' : ''} disabled>
+            <label class="form-check-label" for="step-${index}">
+              ${step.step_title}
+            </label>
+          </div>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div id="collapse-${index}" class="collapse">
+          <div class="card-body">
+            ${step.step_detailed_description}
+          </div>
+        </div>
+      </div>
+    `,
+      )
+      .join('');
+
+    this.taskPlanContainer.innerHTML = `
+      <div class="task-plan-container">
+        ${planHtml}
+      </div>
+    `;
+  }
+
+  renderProgressBar() {
+    const taskPlan = this.chatController.chat.taskPlan;
+    if (!taskPlan || taskPlan.length === 0) {
+      return;
+    }
+
+    const totalTasks = taskPlan.length;
+    const completedTasks = taskPlan.filter((step) => step.completed).length;
+    const progressPercentage = Math.round((completedTasks / totalTasks) * 100);
+
+    const progressBarHtml = `
+      <div class="progress mb-3">
+        <div class="progress-bar" role="progressbar" style="width: ${progressPercentage}%;" 
+             aria-valuenow="${progressPercentage}" aria-valuemin="0" aria-valuemax="100">
+          ${progressPercentage}%
+        </div>
+      </div>
+      <p class="text-muted mb-3">Completed ${completedTasks} of ${totalTasks} tasks</p>
+    `;
+
+    this.taskPlanProgressContainer.innerHTML = progressBarHtml;
   }
 
   setupContextFilesEventListener() {

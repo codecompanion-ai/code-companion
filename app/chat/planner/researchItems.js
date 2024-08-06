@@ -154,6 +154,7 @@ const researchItems = [
 
 const taskClassification = {
   name: 'task_classification',
+  description: `Classify the task`,
   prompt: `
 Task Classification Instructions:
 
@@ -199,4 +200,54 @@ Task Classification Instructions:
   additionalInformation: ['projectStructure', 'getTaskDescription'],
 };
 
-module.exports = { researchItems, taskClassification };
+const taskPlan = {
+  name: 'task_plan',
+  description: `Create a detailed implementation plan for completing the given taskDescription and relevant context and files.`,
+  model: 'large',
+  maxSteps: 2,
+  prompt: `
+Create a detailed implementation plan for the given task. Focus on concrete actions and avoid including research steps.
+
+1. For each sub-task:
+   a) Discuss the sub-task, presenting all viable options.
+   b) Identify and justify the best option.
+   c) Provide a detailed description of the chosen approach.
+   d) Create a concise title (max 5 words) for the sub-task.
+   e) List the specific files that need modification.
+
+2. Include only necessary steps to complete the task, such as:
+   - Modifying existing files
+   - Creating new files
+   - Running commands
+   - Installing dependencies
+
+3. Omit testing steps unless explicitly mentioned in the project overview.
+
+4. Ensure each step is actionable and directly contributes to task completion.
+
+5. Maintain a logical order of steps, considering dependencies between actions.
+
+6. Use clear, specific language to describe each action.
+
+7. Always add "Finalize" step to the plan. Based on additional information provided, in this step add description to review and reflect on implementation, build and run the project based of the instructions.
+
+Remember: The goal is to provide a practical, step-by-step guide for implementing the required changes.
+`,
+  outputFormat: {
+    plan: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          discussion: { type: 'string' },
+          step_detailed_description: { type: 'string' },
+          step_title: { type: 'string' },
+          files_to_modify: { type: 'array', items: { type: 'string' } },
+        },
+      },
+    },
+  },
+  additionalInformation: ['getTaskDescription', 'taskContext', 'taskRelevantFilesContent', 'projectStructure'],
+};
+
+module.exports = { researchItems, taskClassification, taskPlan };

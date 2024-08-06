@@ -5,7 +5,7 @@ const { contextualCompress } = require('./contextual_compressor');
 const axios = require('axios');
 const { Readability } = require('@mozilla/readability');
 const { JSDOM } = require('jsdom');
-const { normalizedFilePath } = require('../utils');
+const { normalizedFilePath, openFileLink } = require('../utils');
 const { generateDiff } = require('./code_diff');
 
 const toolDefinitions = [
@@ -393,32 +393,6 @@ async function googleSearch({ query }) {
     `Checked websites:<br>${results.map((result) => `<a href="${result.link}" class="text-truncate ms-2">${result.link}</a>`).join('<br>')}`,
   );
   return JSON.stringify(firstCompressedResult);
-}
-
-async function openFileLink(filepath) {
-  try {
-    let absolutePath = path.normalize(filepath);
-
-    if (!path.isAbsolute(absolutePath)) {
-      if (chatController.agent.projectController.currentProject) {
-        absolutePath = path.join(chatController.agent.projectController.currentProject.path, absolutePath);
-      } else {
-        absolutePath = await normalizedFilePath(absolutePath);
-      }
-    }
-
-    let filename;
-    if (chatController.agent.projectController.currentProject) {
-      filename = path.relative(chatController.agent.projectController.currentProject.path, absolutePath);
-    } else {
-      filename = path.relative(chatController.agent.currentWorkingDir, absolutePath);
-    }
-
-    return `<a href="#" onclick="event.preventDefault(); viewController.openFileInIDE('${absolutePath.replace(/\\/g, '\\\\')}')">${filename}</a>`;
-  } catch (error) {
-    console.error(error);
-    return filepath;
-  }
 }
 
 async function fetchAndParseUrl(url) {

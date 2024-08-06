@@ -65,7 +65,6 @@ class ResearchAgent {
         });
       }
     }
-    console.log('executeResearch: no result');
     return null;
   }
 
@@ -130,14 +129,7 @@ class ResearchAgent {
   }
 
   async projectStructure() {
-    if (this.projectStructureCache) {
-      return this.projectStructureCache;
-    }
-    this.projectStructureCache = `
-    <projectStructure>
-    ${await this.chatController.agent.projectController.getFolderStructure(50, 4)}
-    </projectStructure>`;
-    return this.projectStructureCache;
+    return `<projectStructure>\n${await this.chatController.agent.projectController.getFolderStructure(50, 4)}\n</projectStructure>`;
   }
 
   getTaskDescription() {

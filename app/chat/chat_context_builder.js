@@ -237,7 +237,6 @@ class ChatContextBuilder {
       summary = summary.replace(/^\s*\[/, '');
       // Replace last "]" with "," if present
       summary = summary.replace(/\]\s*$/, ',');
-      console.log('Summarized message history:', summary);
       return summary;
     } else {
       return messages;
@@ -269,13 +268,9 @@ class ChatContextBuilder {
     const chatInteractionFiles = await this.getChatInteractionFiles();
     const editedFiles = chatController.agent.projectController.getRecentModifiedFiles(this.lastEditedFilesTimestamp);
     this.lastEditedFilesTimestamp = Date.now();
-    const combinedFiles = [
-      ...new Set([...chatInteractionFiles, ...Object.keys(this.taskContextFiles), ...editedFiles]),
-    ];
-    combinedFiles.forEach((file) => {
-      if (!this.taskContextFiles.hasOwnProperty(file)) {
-        this.updateTaskContextFile(file, true);
-      }
+    const newlyChangedFiles = [...new Set([...chatInteractionFiles, ...editedFiles])];
+    newlyChangedFiles.forEach((file) => {
+      this.updateTaskContextFile(file, true);
     });
 
     return Object.keys(this.getEnabledTaskContextFiles());

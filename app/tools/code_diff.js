@@ -18,7 +18,7 @@ function drawDiff(targetElement, diffString) {
     highlight: true,
     matching: 'lines',
     colorScheme: chatController.settings.theme,
-    showDiffOnly: false,
+    showDiffOnly: true,
     fileContentToggle: false,
   };
   const diff2htmlUi = new Diff2HtmlUI(targetElement, diffString, diffConfig);

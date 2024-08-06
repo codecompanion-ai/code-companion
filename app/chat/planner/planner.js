@@ -10,6 +10,8 @@ class Planner {
     viewController.updateLoadingIndicator(true, 'Analyzing task and project...');
     const taskClassificationResult = await this.classifyTask(taskDescription);
     this.chatController.taskTab.renderTask(taskDescription, taskClassificationResult.concise_task_title);
+    this.chatController.chat.taskTitle = taskClassificationResult.concise_task_title;
+
     if (taskClassificationResult.project_status === 'existing' && taskClassificationResult.task_type === 'multi_step') {
       const taskContext = await this.performResearch(taskDescription);
       this.chatController.chat.taskContext = this.formatTaskContextToMarkdown(taskContext);
@@ -40,8 +42,12 @@ class Planner {
   updateTaskContextFiles(taskContext) {
     const chatContextBuilder = this.chatController.chat.chatContextBuilder;
     const taskContextFiles = taskContext['task_relevant_files']?.directly_related_files || [];
+    const potentiallyRelatedFiles = taskContext['task_relevant_files']?.potentially_related_files || [];
     taskContextFiles.forEach((file) => {
       chatContextBuilder.updateTaskContextFile(file, true);
+    });
+    potentiallyRelatedFiles.forEach((file) => {
+      chatContextBuilder.updateTaskContextFile(file, false);
     });
   }
 

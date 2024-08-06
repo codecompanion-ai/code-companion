@@ -75,16 +75,16 @@ const researchItems = [
     name: 'task_relevant_files',
     description: `Identify files that are likely to be relevant to the user task`,
     prompt: `
-    Based on the user task identify files that are likely to be needed to complete the task.
+    Based on the user task description identify files that are likely to be needed to complete the task.
     Consider dependencies, imports, and functional relationships.
-    If there is less than 20 code files, just read all files.
+    If there is less than 20 code files, just read all files to analyze.
     If there are more than 20 code files, search codebase.
-    Include those that are most likely needed to complete coding task`,
+    In output include files that software engineers are likely to need to understand or to modify in order to complete user's task.`,
     outputFormat: {
       directly_related_files: { type: 'array', items: { type: 'string', description: 'Absolute file path' } },
       potentially_related_files: { type: 'array', items: { type: 'string', description: 'Absolute file path' } },
     },
-    additionalInformation: 'getTaskDescription',
+    additionalInformation: ['getTaskDescription', 'projectStructure'],
     cache: false,
   },
   // sampleCode: {
@@ -161,9 +161,9 @@ Task Classification Instructions:
    - Determine: Is this a new or existing project?
 
 2. Task Complexity:
-   - Analyze the task description carefully.
-   - Simple Task: Single action (e.g., committing changes, renaming a file).
-   - Multi-Step Task: Either requires some planning ormultiple actions or changes may be needed, or modifying several files. If you not sure, classify as multi_step.
+   - Classify task as simple task: when task can be completed without knowing project structure or code and in a single step.
+   - Classify as 'multi_step' may require some planning or multiple actions or changes may be needed, or modifying several files.
+   - If you not sure, classify as 'multi_step'.
 
 3. Task Title:
    - Create a concise title (max 4 words).

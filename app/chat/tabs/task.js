@@ -1,5 +1,6 @@
 const path = require('path');
 const marked = require('marked');
+const { openFileLink } = require('../../utils');
 
 class TaskTab {
   constructor(chatController) {
@@ -8,14 +9,9 @@ class TaskTab {
     this.contextFilesContainer = document.getElementById('contextFilesContainer');
   }
 
-  async render() {
+  render() {
     const taskContext = this.chatController.chat.taskContext;
-    this.renderProjectContext(taskContext);
-    this.renderContextFiles();
-  }
-
-  renderProjectContext(projectContext) {
-    this.contextProjectDetailsContainer.innerHTML = marked.parse(projectContext);
+    this.contextProjectDetailsContainer.innerHTML = marked.parse(taskContext);
   }
 
   async renderContextFiles() {
@@ -28,7 +24,7 @@ class TaskTab {
     const baseDirectory = await this.chatController.terminalSession.getCurrentDirectory();
     const relativePaths = this.getRelativePaths(taskContextFiles, baseDirectory);
 
-    this.contextFilesContainer.innerHTML = this.generateContextFilesHTML(relativePaths);
+    this.contextFilesContainer.innerHTML = await this.generateContextFilesHTML(relativePaths);
     this.setupContextFilesEventListener();
   }
 
@@ -42,22 +38,24 @@ class TaskTab {
       .sort((a, b) => a.path.localeCompare(b.path));
   }
 
-  generateContextFilesHTML(relativePaths) {
+  async generateContextFilesHTML(relativePaths) {
+    const listItems = await Promise.all(
+      relativePaths.map(
+        async ({ path: relativePath, enabled, fullPath }) => `
+          <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+            ${await openFileLink(relativePath)}
+            <div class="form-check form-switch">
+              <input class="form-check-input context-file-checkbox" type="checkbox" role="switch" 
+                data-full-path="${fullPath.replace(/\\/g, '\\\\')}" ${enabled ? 'checked' : ''}>
+            </div>
+          </li>
+        `,
+      ),
+    );
+
     return `
     <ul class="list-group list-group-flush">
-      ${relativePaths
-        .map(
-          ({ path: relativePath, enabled, fullPath }) => `
-        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-          ${relativePath}
-          <div class="form-check form-switch">
-            <input class="form-check-input context-file-checkbox" type="checkbox" role="switch" 
-              data-full-path="${fullPath.replace(/\\/g, '\\\\')}" ${enabled ? 'checked' : ''}>
-          </div>
-        </li>
-      `,
-        )
-        .join('')}
+      ${listItems.join('')}
     </ul>
   `;
   }

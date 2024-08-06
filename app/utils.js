@@ -1,7 +1,8 @@
 const isTextOrBinary = require('istextorbinary');
 const readChunkSync = require('read-chunk').sync;
 const { getEncoding } = require('js-tiktoken');
-
+const path = require('path');
+const fs = require('graceful-fs');
 const tokenizer = getEncoding('cl100k_base');
 
 async function withTimeout(promise, ms) {
@@ -118,6 +119,31 @@ function getTokenCount(content) {
   return tokenizer.encode(JSON.stringify(content) || '').length;
 }
 
+async function openFileLink(filepath) {
+  try {
+    let absolutePath = path.normalize(filepath);
+    if (!path.isAbsolute(absolutePath)) {
+      if (chatController.agent.projectController.currentProject) {
+        absolutePath = path.join(chatController.agent.projectController.currentProject.path, absolutePath);
+      } else {
+        absolutePath = await normalizedFilePath(absolutePath);
+      }
+    }
+
+    let filename;
+    if (chatController.agent.projectController.currentProject) {
+      filename = path.relative(chatController.agent.projectController.currentProject.path, absolutePath);
+    } else {
+      filename = path.relative(chatController.agent.currentWorkingDir, absolutePath);
+    }
+
+    return `<a href="#" onclick="event.preventDefault(); viewController.openFileInIDE('${absolutePath.replace(/\\/g, '\\\\')}')">${filename}</a>`;
+  } catch (error) {
+    console.error(error);
+    return filepath;
+  }
+}
+
 module.exports = {
   withTimeout,
   withErrorHandling,
@@ -127,4 +153,5 @@ module.exports = {
   normalizedFilePath,
   isFileExists,
   getTokenCount,
+  openFileLink,
 };

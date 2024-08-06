@@ -14,6 +14,7 @@ const researchItems = [
         description: 'The type of project, e.g. "web", "mobile app", "chrome extension"',
       },
       installation_instructions: { type: 'string' },
+      build_instructions: { type: 'string' },
       launch_instructions: { type: 'string' },
     },
     additionalInformation: 'projectStructure',

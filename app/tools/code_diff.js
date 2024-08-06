@@ -16,10 +16,13 @@ function drawDiff(targetElement, diffString) {
   const diffConfig = {
     drawFileList: false,
     highlight: true,
-    matching: 'lines',
+    matching: 'none',
     colorScheme: chatController.settings.theme,
     showDiffOnly: true,
     fileContentToggle: false,
+    renderNothingWhenEmpty: false,
+    maxLineSizeInBlockForComparison: 200,
+    diffStyle: 'word',
   };
   const diff2htmlUi = new Diff2HtmlUI(targetElement, diffString, diffConfig);
   diff2htmlUi.draw();

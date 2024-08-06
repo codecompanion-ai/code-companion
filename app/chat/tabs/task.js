@@ -43,7 +43,9 @@ class TaskTab {
       relativePaths.map(
         async ({ path: relativePath, enabled, fullPath }) => `
           <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-            ${await openFileLink(relativePath)}
+            <div class="text-truncate mw-75">
+              ${await openFileLink(relativePath)}
+            </div>
             <div class="form-check form-switch">
               <input class="form-check-input context-file-checkbox" type="checkbox" role="switch" 
                 data-full-path="${fullPath.replace(/\\/g, '\\\\')}" ${enabled ? 'checked' : ''}>

@@ -276,6 +276,7 @@ class ChatController {
     this.chat.addFrontendMessage('plan', this.taskTab.planHtml(true));
     const decision = await this.agent.showApprovalButtons();
     if (decision === 'reject') {
+      this.chat.addBackendMessage('user', 'lets make adjustments to the task plan and update it');
       this.chat.addFrontendMessage('info', 'Please provide feedback below how to improve and click send');
     } else {
       this.taskTab.renderTaskPlan();

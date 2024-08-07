@@ -148,6 +148,31 @@ const toolDefinitions = [
     enabled: true,
     requiresApproval: false,
   },
+  {
+    name: 'update_task_plan',
+    description: 'Update the task plan.Always provide all steps in the task plan',
+    parameters: {
+      type: 'object',
+      properties: {
+        updatedTaskPlan: {
+          type: 'array',
+          description: 'The updated task plan array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'integer' },
+              step_title: { type: 'string' },
+              step_detailed_description: { type: 'string' },
+              completed: { type: 'boolean' },
+            },
+          },
+        },
+      },
+    },
+    executeFunction: updateTaskPlan,
+    enabled: true,
+    approvalRequired: false,
+  },
 ];
 
 async function previewMessageMapping(functionName, args) {
@@ -195,6 +220,10 @@ async function previewMessageMapping(functionName, args) {
     },
     search: {
       message: `Searching ${args.type} for '${args.query}'`,
+      code: '',
+    },
+    update_task_plan: {
+      message: 'Updating the task plan',
       code: '',
     },
   };
@@ -494,10 +523,17 @@ function completeTaskPlanStep(taskPlanStepId) {
   }
 }
 
+function updateTaskPlan({ updatedTaskPlan }) {
+  chatController.chat.taskPlan = updatedTaskPlan;
+  chatController.taskTab.renderTaskPlan();
+  return 'Task plan updated successfully';
+}
+
 module.exports = {
   allEnabledTools,
   planningTools,
   toolDefinitions,
   previewMessageMapping,
   completeTaskPlanStep,
+  updateTaskPlan,
 };

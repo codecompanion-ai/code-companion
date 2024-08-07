@@ -13,13 +13,21 @@ class TaskTab {
 
   render() {
     const taskContext = this.chatController.chat.taskContext;
-    this.contextProjectDetailsContainer.innerHTML = marked.parse(taskContext);
+
+    this.renderTaskPlan();
+    this.renderContextFiles();
+    if (taskContext) {
+      this.contextProjectDetailsContainer.innerHTML = marked.parse(taskContext);
+    } else {
+      this.contextProjectDetailsContainer.innerHTML =
+        '<span class="text-secondary">No project context provided for this task</span>';
+    }
   }
 
   async renderContextFiles() {
     const taskContextFiles = this.chatController.chat.chatContextBuilder.taskContextFiles;
     if (!taskContextFiles || Object.keys(taskContextFiles).length === 0) {
-      this.contextFilesContainer.innerHTML = '<p class="text-muted">No context files available.</p>';
+      this.contextFilesContainer.innerHTML = '<p class="text-secondary">No context files available</p>';
       return;
     }
 
@@ -67,7 +75,8 @@ class TaskTab {
   renderTaskPlan() {
     const taskPlan = this.chatController.chat.taskPlan;
     if (!taskPlan) {
-      this.taskPlanContainer.innerHTML = '<span class="text-muted">No plan needed for this task</span>';
+      this.taskPlanContainer.innerHTML = '<span class="text-secondary">No plan created for this task</span>';
+      this.taskPlanProgressContainer.innerHTML = '';
       return;
     }
 
@@ -80,15 +89,20 @@ class TaskTab {
         <div class="card-header d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapse-${index}" aria-expanded="false" aria-controls="collapse-${index}" style="cursor: pointer;">
           <div class="form-check">
             <input class="form-check-input" type="checkbox" id="step-${index}" ${step.completed ? 'checked' : ''} disabled>
-            <label class="form-check-label" for="step-${index}">
+            <label for="step-${index}">
               ${step.step_title}
             </label>
           </div>
-          <i class="bi bi-chevron-down"></i>
+          <div class="d-flex align-items-center">
+            <button class="btn btn-link p-0 me-2" onclick="event.preventDefault(); chatController.taskTab.deleteTaskPlanItem(${index})">
+              <i class="bi bi-trash text-secondary"></i>
+            </button>
+            <i class="bi bi-chevron-down collapse-icon"></i>
+          </div>
         </div>
         <div id="collapse-${index}" class="collapse">
           <div class="card-body">
-            ${step.step_detailed_description}
+            ${marked.parse(step.step_detailed_description)}
           </div>
         </div>
       </div>
@@ -103,9 +117,16 @@ class TaskTab {
     `;
   }
 
+  deleteTaskPlanItem(index) {
+    const taskPlan = this.chatController.chat.taskPlan;
+    taskPlan.splice(index, 1);
+    this.renderTaskPlan();
+  }
+
   renderProgressBar() {
     const taskPlan = this.chatController.chat.taskPlan;
     if (!taskPlan || taskPlan.length === 0) {
+      this.taskPlanProgressContainer.innerHTML = '';
       return;
     }
 
@@ -120,7 +141,6 @@ class TaskTab {
           ${progressPercentage}%
         </div>
       </div>
-      <p class="text-muted mb-3">Completed ${completedTasks} of ${totalTasks} tasks</p>
     `;
 
     this.taskPlanProgressContainer.innerHTML = progressBarHtml;
@@ -150,7 +170,7 @@ class TaskTab {
 
     const displayTitle =
       taskTitle || (task.split(' ').length > 4 ? task.split(' ').slice(0, 4).join(' ') + '...' : task);
-    document.getElementById('taskTitle').innerText = displayTitle;
+    document.getElementById('taskTitle').innerHTML = displayTitle;
     document.getElementById('taskContainer').innerHTML = marked.parse(task);
   }
 }

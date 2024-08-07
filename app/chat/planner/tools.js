@@ -93,6 +93,7 @@ function tools(outputFormat) {
         parameters: {
           type: 'object',
           properties: outputFormat,
+          required: Object.keys(outputFormat),
         },
       };
     }

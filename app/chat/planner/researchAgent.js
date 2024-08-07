@@ -4,10 +4,11 @@ const { log } = require('../../utils');
 const MAX_STEPS = 5;
 
 const SYSTEM_MESSAGE_TEMPLATE = `
-You are a research agent. Your task is to: "{description}".
+{description}
+
 Use the available tools to gather information.
-Output your findings using the 'output' tool when research is complete or there is no more information to gather.
-Items that you couldn't find or were not able to research should be marked as 'not found'.
+Output your findings using the 'output' tool when done or there is no more information to gather.
+Respond with 'null' for items that you couldn't find or were not able to research.
 
 Current directory is '{currentDirectory}'.
 
@@ -20,12 +21,14 @@ class ResearchAgent {
     this.projectStructureCache;
   }
 
-  async executeResearch(researchItem, taskDescription) {
+  async executeResearch(researchItem, taskDescription, taskContext) {
     if (researchItem.cache && this.getCache(researchItem.name)) {
       return this.getCache(researchItem.name);
     }
 
     this.taskDescription = taskDescription;
+    this.taskContext = taskContext;
+
     this.model = researchItem.model === 'large' ? chatController.model : chatController.smallModel;
     const messages = await this.initializeMessages(researchItem);
     const availableTools = tools(researchItem.outputFormat);
@@ -137,12 +140,19 @@ class ResearchAgent {
     return `<taskDescription>\n${this.taskDescription}\n</taskDescription>`;
   }
 
-  taskContext() {
+  additionalContext() {
     return `<additionalContext>\n${this.chatController.chat.taskContext}\n</additionalContext>`;
   }
 
   async taskRelevantFilesContent() {
     return await this.chatController.chat.chatContextBuilder.getRelevantFilesContents();
+  }
+
+  potentiallyRelevantFiles() {
+    const potentiallyRelevantFiles = this.taskContext['task_relevant_files']?.potentially_relevant_files || [];
+    if (potentiallyRelevantFiles.length === 0) return '';
+
+    return `<potentiallyRelevantFiles>\n${potentiallyRelevantFiles.join('\n')}\n</potentiallyRelevantFiles>`;
   }
 
   setCache(key, value) {

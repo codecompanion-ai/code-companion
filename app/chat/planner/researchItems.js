@@ -1,3 +1,5 @@
+const { PLAN_PROMPT_TEMPLATE } = require('../../static/prompts');
+
 const researchItems = [
   {
     name: 'project_overview',
@@ -74,16 +76,30 @@ const researchItems = [
   // },
   {
     name: 'task_relevant_files',
-    description: `Identify files that are likely to be relevant to the user task`,
+    description: `Identify and prioritize files that are important for a software engineer to review before working on the task defined in <taskDescription>`,
     prompt: `
-    Based on the user task description identify files that are likely to be needed to complete the task.
-    Consider dependencies, imports, and functional relationships.
-    If there is less than 20 code files, just read all files to analyze.
-    If there are more than 20 code files, search codebase.
-    In output include files that software engineers are likely to need to understand or to modify in order to complete user's task.`,
+    Analyze the <taskDescription> and identify files that a software engineer needs to review or modify.
+
+    Think step by step to categorize files as follows:
+
+    1. Directly relevant files:
+       - Files containing logic directly related to the task
+       - Files that will need to be modified to complete the task
+
+    2. Potentially relevant files:
+       - Files that help understand the task context
+       - Files with related functionality, but may not need direct modification
+
+    Steps:
+    1. Identify key concepts and functionality from the <taskDescription>
+    2. Search for files with names or content matching these key concepts
+    3. Check import statements and function calls to find related files
+    4. Include relevant configuration files if the task involves system settings
+
+    Sort files in each category by relevance to the taskDescription, most relevant first.`,
     outputFormat: {
-      directly_related_files: { type: 'array', items: { type: 'string', description: 'Absolute file path' } },
-      potentially_related_files: { type: 'array', items: { type: 'string', description: 'Absolute file path' } },
+      directly_relevant_files: { type: 'array', items: { type: 'string', description: 'Absolute file path' } },
+      potentially_relevant_files: { type: 'array', items: { type: 'string', description: 'Absolute file path' } },
     },
     additionalInformation: ['getTaskDescription', 'projectStructure'],
     cache: false,
@@ -204,50 +220,29 @@ const taskPlan = {
   name: 'task_plan',
   description: `Create a detailed implementation plan for completing the given taskDescription and relevant context and files.`,
   model: 'large',
-  maxSteps: 2,
-  prompt: `
-Create a detailed implementation plan for the given task. Focus on concrete actions and avoid including research steps.
-
-1. For each sub-task:
-   a) Discuss the sub-task, presenting all viable options.
-   b) Identify and justify the best option.
-   c) Provide a detailed description of the chosen approach.
-   d) Create a concise title (max 5 words) for the sub-task.
-   e) List the specific files that need modification.
-
-2. Include only necessary steps to complete the task, such as:
-   - Modifying existing files
-   - Creating new files
-   - Running commands
-   - Installing dependencies
-
-3. Omit testing steps unless explicitly mentioned in the project overview.
-
-4. Ensure each step is actionable and directly contributes to task completion.
-
-5. Maintain a logical order of steps, considering dependencies between actions.
-
-6. Use clear, specific language to describe each action.
-
-7. Always add "Finalize" step to the plan. Based on additional information provided, in this step add description to review and reflect on implementation, build and run the project based of the instructions.
-
-Remember: The goal is to provide a practical, step-by-step guide for implementing the required changes.
-`,
+  maxSteps: 3,
+  prompt: PLAN_PROMPT_TEMPLATE,
   outputFormat: {
     plan: {
       type: 'array',
       items: {
         type: 'object',
         properties: {
-          discussion: { type: 'string' },
+          thinking: { type: 'string' },
           step_detailed_description: { type: 'string' },
           step_title: { type: 'string' },
-          files_to_modify: { type: 'array', items: { type: 'string' } },
+          relevant_files: { type: 'array', items: { type: 'string' } },
         },
       },
     },
   },
-  additionalInformation: ['getTaskDescription', 'taskContext', 'taskRelevantFilesContent', 'projectStructure'],
+  additionalInformation: [
+    'getTaskDescription',
+    'additionalContext',
+    'taskRelevantFilesContent',
+    'potentiallyRelevantFiles',
+    'projectStructure',
+  ],
 };
 
 module.exports = { researchItems, taskClassification, taskPlan };

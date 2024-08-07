@@ -27,6 +27,7 @@ const toolDefinitions = [
             'Set to true only if you or the user need a screenshot of the page. Avoid taking a screenshot unless some problem need to be solved',
           default: false,
         },
+        taskPlanStepId: { type: 'integer' },
       },
     },
     executeFunction: browser,
@@ -47,6 +48,7 @@ const toolDefinitions = [
           type: 'string',
           description: `Output the entire completed source code for a file in a single step. Always use correct indentation and new lines.`,
         },
+        taskPlanStepId: { type: 'integer' },
       },
     },
     executeFunction: createFile,
@@ -76,6 +78,7 @@ const toolDefinitions = [
           description:
             'New content to replace the specified lines. Ensure correct indentation for each new line of code inserted.',
         },
+        taskPlanStepId: { type: 'integer' },
       },
     },
     executeFunction: replaceInFile,
@@ -91,6 +94,7 @@ const toolDefinitions = [
         targetFile: {
           type: 'string',
         },
+        taskPlanStepId: { type: 'integer' },
       },
     },
     executeFunction: readFile,
@@ -114,6 +118,7 @@ const toolDefinitions = [
             'When set to false, will hang until command finished executing. Set to true always when you need to run a webserver right before opening a browser',
           default: false,
         },
+        taskPlanStepId: { type: 'integer' },
       },
     },
     executeFunction: shell,
@@ -136,21 +141,11 @@ const toolDefinitions = [
           type: 'string',
           description: `Long, descriptive natural language search query`,
         },
+        taskPlanStepId: { type: 'integer' },
       },
     },
     executeFunction: unifiedSearch,
     enabled: true,
-    requiresApproval: false,
-  },
-  {
-    name: 'task_planning_done',
-    description: 'Indicate that task planning is done and ready to start implementation',
-    parameters: {
-      type: 'object',
-      properties: {},
-    },
-    executeFunction: taskPlanningDone,
-    enabled: false,
     requiresApproval: false,
   },
 ];
@@ -202,20 +197,11 @@ async function previewMessageMapping(functionName, args) {
       message: `Searching ${args.type} for '${args.query}'`,
       code: '',
     },
-    task_planning_done: {
-      message: 'Task planning is done.',
-      code: '',
-    },
   };
   return mapping[functionName];
 }
 
-function taskPlanningDone() {
-  chatController.chat.chatContextBuilder.taskNeedsPlan = false;
-  return 'Task planning is done.';
-}
-
-async function browser({ include_screenshot, url }) {
+async function browser({ include_screenshot, url, taskPlanStepId }) {
   let assistantScreenshotMessage = '';
 
   viewController.updateLoadingIndicator(true, 'Waiting for the page to load...');
@@ -228,10 +214,11 @@ async function browser({ include_screenshot, url }) {
     assistantScreenshotMessage = `\nScreenshot of the webpage was taken and attached in the user message`;
   }
   chatController.chat.addFrontendMessage('function', 'Opened in browser');
+  completeTaskPlanStep(taskPlanStepId);
   return `Browser opened ${url.startsWith('data:') ? 'data URL to show visualization' : url}.\n<console_output>${consoleOutput}</console_output>${assistantScreenshotMessage}`;
 }
 
-async function createFile({ targetFile, createText }) {
+async function createFile({ targetFile, createText, taskPlanStepId }) {
   if (!targetFile) {
     return respondTargetFileNotProvided();
   }
@@ -241,12 +228,12 @@ async function createFile({ targetFile, createText }) {
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
   }
   fs.writeFileSync(filePath, createText);
+  completeTaskPlanStep(taskPlanStepId);
   chatController.chat.addFrontendMessage('function', `File ${await openFileLink(filePath)} created successfully`);
-
   return `File '${targetFile}' created successfully`;
 }
 
-async function replaceInFile({ targetFile, startLineNumber, endLineNumber, replaceWith }) {
+async function replaceInFile({ targetFile, startLineNumber, endLineNumber, replaceWith, taskPlanStepId }) {
   if (!targetFile) {
     return respondTargetFileNotProvided();
   }
@@ -274,7 +261,7 @@ async function replaceInFile({ targetFile, startLineNumber, endLineNumber, repla
   fs.writeFileSync(filePath, newContent);
   const successMessage = `File ${await openFileLink(filePath)} updated successfully.`;
   chatController.chat.addFrontendMessage('function', successMessage);
-
+  completeTaskPlanStep(taskPlanStepId);
   return `File ${filePath} updated successfully.\n<changes_made_to_file>${codeDiff}</changes_made_to_file>`;
 }
 
@@ -292,7 +279,7 @@ async function codeAfterReplace({ targetFile, startLineNumber, endLineNumber, re
   };
 }
 
-async function readFile({ targetFile }) {
+async function readFile({ targetFile, taskPlanStepId }) {
   if (!targetFile) {
     return respondTargetFileNotProvided();
   }
@@ -309,14 +296,16 @@ async function readFile({ targetFile }) {
   return `File "${filePath}" was read.`;
 }
 
-async function shell({ command, background }) {
+async function shell({ command, background, taskPlanStepId }) {
   viewController.updateLoadingIndicator(true, 'Executing shell command ...  (click Stop to cancel or use Ctrl+C)');
   let commandResult;
   if (background === true) {
     chatController.terminalSession.executeShellCommand(command);
+    completeTaskPlanStep(taskPlanStepId);
     return 'Command started in the background';
   } else {
     commandResult = await chatController.terminalSession.executeShellCommand(command);
+    completeTaskPlanStep(taskPlanStepId);
   }
   // Preserve first 5 lines and last 95 lines if more than 100 lines
   const lines = commandResult.split('\n');
@@ -447,13 +436,15 @@ Respond with a boolean value: "true" or "false"`;
   return result !== false;
 }
 
-async function unifiedSearch({ type, query }) {
+async function unifiedSearch({ type, query, taskPlanStepId }) {
   switch (type) {
     case 'codebase':
       const codebaseResult = await searchCode({ query });
+      completeTaskPlanStep(taskPlanStepId);
       return `Codebase search result for "${query}":\n${codebaseResult}`;
     case 'google':
       const result = await googleSearch({ query });
+      completeTaskPlanStep(taskPlanStepId);
       return `Google search result for "${query}":\n${result}`;
     default:
       return 'Invalid search type specified.';
@@ -491,9 +482,22 @@ function planningTools() {
   return tools;
 }
 
+function completeTaskPlanStep(taskPlanStepId) {
+  const taskPlan = chatController.chat.taskPlan;
+  if (taskPlan) {
+    for (let i = 0; i <= taskPlanStepId; i++) {
+      if (taskPlan[i]) {
+        taskPlan[i].completed = true;
+      }
+    }
+    chatController.taskTab.renderTaskPlan();
+  }
+}
+
 module.exports = {
   allEnabledTools,
   planningTools,
   toolDefinitions,
   previewMessageMapping,
+  completeTaskPlanStep,
 };

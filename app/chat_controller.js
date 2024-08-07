@@ -296,7 +296,7 @@ class ChatController {
     document.getElementById('retry_button').setAttribute('hidden', true);
     document.getElementById('approval_buttons').setAttribute('hidden', true);
     document.getElementById('messageInput').disabled = false;
-    this.taskTab.renderTask(null, 'New task');
+    this.taskTab.render();
     document.getElementById('messageInput').setAttribute('placeholder', 'Provide task details...');
     this.stopProcess = false;
     this.usage = {};

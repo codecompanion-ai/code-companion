@@ -4,6 +4,7 @@ const ResearchAgent = require('./researchAgent');
 class Planner {
   constructor(chatController) {
     this.chatController = chatController;
+    this.taskContext = null;
   }
 
   async run(taskDescription) {
@@ -15,6 +16,7 @@ class Planner {
     if (taskClassificationResult.project_status === 'existing' && taskClassificationResult.task_type === 'multi_step') {
       const taskContext = await this.performResearch(taskDescription);
       this.chatController.chat.taskContext = this.formatTaskContextToMarkdown(taskContext);
+      this.taskContext = taskContext;
       this.updateTaskContextFiles(taskContext);
       this.chatController.taskTab.render();
     }
@@ -47,14 +49,14 @@ class Planner {
 
   async createPlan(taskDescription) {
     const researchAgent = new ResearchAgent(this.chatController);
-    const result = await researchAgent.executeResearch(taskPlan, taskDescription);
+    const result = await researchAgent.executeResearch(taskPlan, taskDescription, this.taskContext);
     return result;
   }
 
   updateTaskContextFiles(taskContext) {
     const chatContextBuilder = this.chatController.chat.chatContextBuilder;
-    const taskContextFiles = taskContext['task_relevant_files']?.directly_related_files || [];
-    const potentiallyRelatedFiles = taskContext['task_relevant_files']?.potentially_related_files || [];
+    const taskContextFiles = taskContext['task_relevant_files']?.directly_relevant_files || [];
+    const potentiallyRelatedFiles = taskContext['task_relevant_files']?.potentially_relevant_files || [];
     taskContextFiles.forEach((file) => {
       chatContextBuilder.updateTaskContextFile(file, true);
     });

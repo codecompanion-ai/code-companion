@@ -120,7 +120,15 @@ class ChatContextBuilder {
 
   addTaskPlanMessage() {
     if (!this.chat.taskPlan) return '';
-    return `<task_plan>\n${this.chat.taskPlan}</task_plan>\n`;
+    const formattedTaskPlan = this.chat.taskPlan.map((step, index) => {
+      return {
+        id: index,
+        step_title: step.step_title,
+        step_detailed_description: step.step_detailed_description,
+        enabled: step.enabled,
+      };
+    });
+    return `Follow the task plan below to complete the task:\n<task_plan>\n${JSON.stringify(formattedTaskPlan, null, 2)}\n</task_plan>`;
   }
 
   addProjectCustomInstructionsMessage() {
@@ -411,7 +419,8 @@ class ChatContextBuilder {
   }
 
   async projectStateToText() {
-    const dirName = path.basename(await chatController.terminalSession.getCurrentDirectory());
+    await chatController.terminalSession.getCurrentDirectory();
+    const dirName = path.basename(chatController.agent.currentWorkingDir);
 
     let projectStateText = '';
     projectStateText += `Current directory is '${dirName}'. The full path to this directory is '${chatController.agent.currentWorkingDir}'`;

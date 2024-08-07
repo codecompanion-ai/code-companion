@@ -144,19 +144,7 @@ Always format your response in an easy-to-understand way with lots of white spac
 
 When done, say "Done" and stop.`;
 
-const FINISH_TASK_PROMPT_TEMPLATE = `
-When finished with all the steps for the task:
-- First, list all requirements and indicate if they were fully implemented and functional or not, one by one, with emoji checkboxes.
-- Second, list all potential bugs per changed file (check imports, syntax, indentation for Python, variables, constant definitions, etc.).
-- Third, list all potential issues per file with the code logic.
-- Finally, fix all code bugs (do not implement enhancements or new features without the user's permission).
-
-Once all bugs are fixed or there are no more issues:
-- First, open the task with a browser (use a tool call) if the result of the task is a web-based app; otherwise, use a terminal to launch the task.
-- Second, ask for feedback and what to do next.`;
-
 module.exports = {
   PLAN_PROMPT_TEMPLATE,
   TASK_EXECUTION_PROMPT_TEMPLATE,
-  FINISH_TASK_PROMPT_TEMPLATE,
 };

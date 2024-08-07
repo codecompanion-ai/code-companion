@@ -7,13 +7,14 @@ class TaskTab {
     this.chatController = chatController;
     this.contextProjectDetailsContainer = document.getElementById('contextProjectDetailsContainer');
     this.contextFilesContainer = document.getElementById('contextFilesContainer');
+    this.filesContextLabel = document.getElementById('filesContextLabel');
     this.taskPlanContainer = document.getElementById('taskPlanContainer');
     this.taskPlanProgressContainer = document.getElementById('taskPlanProgressContainer');
   }
 
   render() {
     const taskContext = this.chatController.chat.taskContext;
-
+    this.renderTask(this.chatController.chat.task, this.chatController.chat.taskTitle);
     this.renderTaskPlan();
     this.renderContextFiles();
     if (taskContext) {
@@ -25,7 +26,9 @@ class TaskTab {
 
   async renderContextFiles() {
     const taskContextFiles = this.chatController.chat.chatContextBuilder.taskContextFiles;
+    const enabledFiles = Object.values(taskContextFiles)?.filter((enabled) => enabled) || [];
     if (!taskContextFiles || Object.keys(taskContextFiles).length === 0) {
+      this.filesContextLabel.innerText = 'Files context (0)';
       this.contextFilesContainer.innerHTML = '<span class="text-secondary">Not available</span>';
       return;
     }
@@ -34,6 +37,7 @@ class TaskTab {
     const relativePaths = this.getRelativePaths(taskContextFiles, baseDirectory);
 
     this.contextFilesContainer.innerHTML = await this.generateContextFilesHTML(relativePaths);
+    this.filesContextLabel.innerText = `Files context (${enabledFiles.length})`;
     this.setupContextFilesEventListener();
   }
 
@@ -171,8 +175,11 @@ class TaskTab {
   renderTask(task, taskTitle) {
     if (!task) {
       document.getElementById('taskTitle').innerText = 'New task';
-      document.getElementById('taskContainer').innerHTML =
-        '<div class="text-secondary">Provide task details in the chat input to start a new task</div>';
+      document.getElementById('taskContainer').innerHTML = `
+      <div class="text-secondary">
+        Provide task details in the chat input to start a new task<br>
+        Keep the task small. Break it down into smaller tasks if necessary
+      </div > `;
       this.contextProjectDetailsContainer.innerHTML = '';
       this.contextFilesContainer.innerHTML = '';
       return;

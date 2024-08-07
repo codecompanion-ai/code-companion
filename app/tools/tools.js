@@ -160,7 +160,6 @@ const toolDefinitions = [
           items: {
             type: 'object',
             properties: {
-              id: { type: 'integer' },
               step_title: { type: 'string' },
               step_detailed_description: { type: 'string' },
               completed: { type: 'boolean' },
@@ -512,9 +511,10 @@ function planningTools() {
 }
 
 function completeTaskPlanStep(taskPlanStepId) {
+  const zeroBasedIndex = taskPlanStepId - 1;
   const taskPlan = chatController.chat.taskPlan;
   if (taskPlan) {
-    for (let i = 0; i <= taskPlanStepId; i++) {
+    for (let i = 0; i <= zeroBasedIndex; i++) {
       if (taskPlan[i]) {
         taskPlan[i].completed = true;
       }

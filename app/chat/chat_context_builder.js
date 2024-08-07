@@ -1,10 +1,6 @@
 const { getTokenCount } = require('../utils');
 
-const {
-  PLAN_PROMPT_TEMPLATE,
-  TASK_EXECUTION_PROMPT_TEMPLATE,
-  FINISH_TASK_PROMPT_TEMPLATE,
-} = require('../static/prompts');
+const { TASK_EXECUTION_PROMPT_TEMPLATE } = require('../static/prompts');
 const { withErrorHandling, getSystemInfo, isTextFile } = require('../utils');
 const { normalizedFilePath } = require('../utils');
 const { log } = require('../utils');
@@ -94,11 +90,6 @@ class ChatContextBuilder {
   async addSystemMessage() {
     let systemMessage;
     systemMessage = TASK_EXECUTION_PROMPT_TEMPLATE;
-
-    if (this.chat.backendMessages.length > 7) {
-      systemMessage += `\n\n${FINISH_TASK_PROMPT_TEMPLATE}`;
-    }
-
     systemMessage += this.addProjectCustomInstructionsMessage();
     systemMessage = this.fromTemplate(systemMessage, '{osName}', getSystemInfo());
     systemMessage = this.fromTemplate(systemMessage, '{shellType}', chatController.terminalSession.shellType);
@@ -122,7 +113,7 @@ class ChatContextBuilder {
     if (!this.chat.taskPlan) return '';
     const formattedTaskPlan = this.chat.taskPlan.map((step, index) => {
       return {
-        id: index,
+        id: index + 1,
         step_title: step.step_title,
         step_detailed_description: step.step_detailed_description,
         enabled: step.enabled,

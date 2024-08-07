@@ -19,15 +19,14 @@ class TaskTab {
     if (taskContext) {
       this.contextProjectDetailsContainer.innerHTML = marked.parse(taskContext);
     } else {
-      this.contextProjectDetailsContainer.innerHTML =
-        '<span class="text-secondary">No project context provided for this task</span>';
+      this.contextProjectDetailsContainer.innerHTML = '<span class="text-secondary">Not available</span>';
     }
   }
 
   async renderContextFiles() {
     const taskContextFiles = this.chatController.chat.chatContextBuilder.taskContextFiles;
     if (!taskContextFiles || Object.keys(taskContextFiles).length === 0) {
-      this.contextFilesContainer.innerHTML = '<p class="text-secondary">No context files available</p>';
+      this.contextFilesContainer.innerHTML = '<span class="text-secondary">Not available</span>';
       return;
     }
 
@@ -75,7 +74,7 @@ class TaskTab {
   renderTaskPlan() {
     const taskPlan = this.chatController.chat.taskPlan;
     if (!taskPlan) {
-      this.taskPlanContainer.innerHTML = '<span class="text-secondary">No plan created for this task</span>';
+      this.taskPlanContainer.innerHTML = '<span class="text-secondary">Not available</span>';
       this.taskPlanProgressContainer.innerHTML = '';
       return;
     }

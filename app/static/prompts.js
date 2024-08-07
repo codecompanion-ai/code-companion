@@ -52,6 +52,7 @@ const CODING_STANDARDS = `
 const PLAN_PROMPT_TEMPLATE = `
 You are Sr. Software Engineer.
 Create a detailed implementation plan for the given task. Focus on concrete actions don't include research steps since that was already done.
+Stick strictly to the task description and don't add any steps for improvements not related to the task.
 Use all information you have at hand to create the plan.
 
 1. For each sub-task:

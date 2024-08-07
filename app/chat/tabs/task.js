@@ -80,26 +80,41 @@ class TaskTab {
     }
 
     this.renderProgressBar();
+    this.taskPlanContainer.innerHTML = this.planHtml();
+  }
 
-    const planHtml = taskPlan
+  planHtml(preview = false) {
+    const taskPlan = this.chatController.chat.taskPlan;
+    if (!taskPlan) return '';
+
+    const reviewMessage = preview ? '<div class="mb-2">Review the plan and click approve to start the task:</div>' : '';
+    const result = taskPlan
       .map(
         (step, index) => `
       <div class="card mb-2">
-        <div class="card-header d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapse-${index}" aria-expanded="false" aria-controls="collapse-${index}" style="cursor: pointer;">
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="step-${index}" ${step.completed ? 'checked' : ''} disabled>
-            <label for="step-${index}">
+        <div class="card-header d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#${preview ? 'preview-' : ''}collapse-${index}" aria-expanded="false" aria-controls="${preview ? 'preview-' : ''}collapse-${index}" style="cursor: pointer;">
+          <div class="${preview ? '' : 'form-check'}">
+            ${
+              preview
+                ? `<span class="me-2">${index + 1}.</span>`
+                : `<input class="form-check-input" type="checkbox" id="${preview ? 'preview-' : ''}step-${index}" ${step.completed ? 'checked' : ''} disabled>`
+            }
+            <label for="${preview ? 'preview-' : ''}step-${index}">
               ${step.step_title}
             </label>
           </div>
           <div class="d-flex align-items-center">
-            <button class="btn btn-link p-0 me-2" onclick="event.preventDefault(); chatController.taskTab.deleteTaskPlanItem(${index})">
-              <i class="bi bi-trash text-secondary"></i>
-            </button>
+            ${
+              preview
+                ? ''
+                : `<button class="btn btn-link p-0 me-2" onclick="event.preventDefault(); chatController.taskTab.deleteTaskPlanItem(${index})">
+                <i class="bi bi-trash text-secondary"></i>
+              </button>`
+            }
             <i class="bi bi-chevron-down collapse-icon"></i>
           </div>
         </div>
-        <div id="collapse-${index}" class="collapse">
+        <div id="${preview ? 'preview-' : ''}collapse-${index}" class="collapse">
           <div class="card-body">
             ${marked.parse(step.step_detailed_description)}
           </div>
@@ -109,11 +124,7 @@ class TaskTab {
       )
       .join('');
 
-    this.taskPlanContainer.innerHTML = `
-      <div class="task-plan-container">
-        ${planHtml}
-      </div>
-    `;
+    return `${reviewMessage}${result}`;
   }
 
   deleteTaskPlanItem(index) {

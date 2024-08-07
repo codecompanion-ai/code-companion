@@ -61,10 +61,8 @@ class Agent {
         }
       } else if (decision === 'reject') {
         isUserRejected = true;
-        chatController.chat.addFrontendMessage(
-          'error',
-          'Action was rejected. Please provide feedback below explaining why you rejected the action and suggest alternative approaches or modifications.',
-        );
+        chatController.chat.addFrontendMessage('function', 'Cancelled');
+        chatController.chat.addFrontendMessage('info', 'Please provide feedback below how to improve and click send');
         chatController.chat.addBackendMessage(
           'tool',
           `User rejected tool call: \n ${JSON.stringify(toolCall, null, 2)}`,
@@ -111,29 +109,38 @@ class Agent {
   }
 
   async waitForDecision(functionName, toolCall) {
-    this.userDecision = null;
     if (
       this.isToolCallRepeated(toolCall) ||
       (chatController.settings.approvalRequired &&
         toolDefinitions.find((tool) => tool.name === functionName).approvalRequired)
     ) {
-      document.getElementById('messageInput').disabled = true;
-      document.getElementById('approval_buttons').removeAttribute('hidden');
-      return new Promise((resolve) => {
-        const checkDecision = setInterval(() => {
-          if (this.userDecision !== null) {
-            clearInterval(checkDecision);
-            document.getElementById('approval_buttons').setAttribute('hidden', true);
-            document.getElementById('messageInput').disabled = false;
-            document.getElementById('messageInput').focus();
-            resolve(this.userDecision);
-            this.userDecision = null;
-          }
-        }, 200);
-      });
+      return this.showApprovalButtons();
     } else {
       return Promise.resolve('approve');
     }
+  }
+
+  async showApprovalButtons() {
+    this.userDecision = null;
+    document.getElementById('messageInput').disabled = true;
+    document.getElementById('approval_buttons').removeAttribute('hidden');
+
+    return new Promise((resolve) => {
+      const checkDecision = setInterval(() => {
+        if (this.userDecision !== null) {
+          clearInterval(checkDecision);
+          this.hideApprovalButtons();
+          resolve(this.userDecision);
+          this.userDecision = null;
+        }
+      }, 200);
+    });
+  }
+
+  hideApprovalButtons() {
+    document.getElementById('approval_buttons').setAttribute('hidden', true);
+    document.getElementById('messageInput').disabled = false;
+    document.getElementById('messageInput').focus();
   }
 
   isToolCallRepeated(toolCall) {

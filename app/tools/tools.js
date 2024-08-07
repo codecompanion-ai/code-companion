@@ -179,7 +179,7 @@ async function previewMessageMapping(functionName, args) {
     },
     create_or_overwrite_file: {
       message: `Creating a file ${args.targetFile}`,
-      code: codeDiff ? `\n\`\`\`diff\n${codeDiff}\n\`\`\`` : `\n\`\`\`${args.createText}\n\`\`\``,
+      code: codeDiff ? `\n\`\`\`diff\n${codeDiff}\n\`\`\`` : `\n\`\`\`\n${args.createText}\n\`\`\``,
     },
     read_file: {
       message: '',

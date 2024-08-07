@@ -149,8 +149,8 @@ class ResearchAgent {
   }
 
   potentiallyRelevantFiles() {
-    const potentiallyRelevantFiles = this.taskContext['task_relevant_files']?.potentially_relevant_files || [];
-    if (potentiallyRelevantFiles.length === 0) return '';
+    const potentiallyRelevantFiles = this.taskContext?.['task_relevant_files']?.potentially_relevant_files || [];
+    if (potentiallyRelevantFiles && potentiallyRelevantFiles.length === 0) return '';
 
     return `<potentiallyRelevantFiles>\n${potentiallyRelevantFiles.join('\n')}\n</potentiallyRelevantFiles>`;
   }

@@ -195,6 +195,7 @@ class ViewController {
       file: { icon: 'paperclip', rowClass: 'mt-3', rowPadding: '3' },
       onboarding: { icon: 'info-circle', rowClass: 'mt-3', rowPadding: '3' },
       assistant: { icon: 'stars text-primary', rowClass: 'mt-3', rowPadding: '3' },
+      plan: { icon: 'list-task', rowClass: 'mt-3', rowPadding: '3', parse: false },
     };
 
     const roleSetting = roleSettings[item.role];
@@ -202,12 +203,13 @@ class ViewController {
   }
 
   createMessageHTML(roleSetting, content, buttons) {
+    const contentHtml = roleSetting.parse === false ? content : content ? marked.parse(content) : '';
     return `<div class="row ${roleSetting.rowClass} align-items-start flex-nowrap">
               <div class="col-auto pt-${roleSetting.rowPadding} flex-shrink-0">
                 ${roleSetting.icon ? `<i class="bi bi-${roleSetting.icon}"></i>` : '&nbsp;'}
               </div>
               <div class="col pt-${roleSetting.rowPadding} flex-grow-1 min-width-0">
-                <div class="overflow-hidden">${content ? marked.parse(content) : ''}</div>
+                <div class="overflow-hidden">${contentHtml}</div>
                 ${buttons}
               </div>
             </div>`;

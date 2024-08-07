@@ -26,7 +26,7 @@ class Planner {
       const planResult = await this.createPlan(taskDescription);
       console.log('plan', planResult);
       this.chatController.chat.taskPlan = planResult.plan.map((item) => ({ ...item, completed: false }));
-      this.chatController.taskTab.renderTaskPlan();
+      viewController.updateLoadingIndicator(false);
     }
   }
 

@@ -261,9 +261,25 @@ class ChatController {
       document.getElementById('messageInput').setAttribute('placeholder', 'Send message...');
       this.chat.addTask(userMessage);
       await new Planner(this).run(userMessage);
-      await this.process();
+      await this.askUserForPlanApproval();
     } else {
       await this.process(userMessage);
+    }
+  }
+
+  async askUserForPlanApproval() {
+    if (!this.chat.taskPlan) {
+      await this.process();
+      return;
+    }
+
+    this.chat.addFrontendMessage('plan', this.taskTab.planHtml(true));
+    const decision = await this.agent.showApprovalButtons();
+    if (decision === 'reject') {
+      this.chat.addFrontendMessage('info', 'Please provide feedback below how to improve and click send');
+    } else {
+      this.taskTab.renderTaskPlan();
+      await this.process();
     }
   }
 

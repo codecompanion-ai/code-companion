@@ -91,14 +91,9 @@
             <div id="output" class="m-2"></div>
             <div id="streaming_output" class="m-2"></div>
             <div id="approval_buttons" class="text-center mb-3" hidden>
-              <button
-                id="reject_button"
-                type="button"
-                class="btn btn-link-secondary mx-2 btn-sm"
-                data-bs-toggle="tooltip"
-                data-bs-title="Reject action, you can still continue after"
-              >
-                <i class="bi bi-x-circle"></i> Reject
+              <button id="reject_button" type="button" class="btn btn-link-secondary mx-2 btn-sm">
+                <i class="bi bi-arrow-counterclockwise"></i>
+                <span>Provide feedback & regenerate</span>
               </button>
               <button id="approve_button" type="button" class="btn btn-primary mx-2 btn-sm">
                 <i class="bi bi-check-lg"></i> Approve
@@ -150,7 +145,7 @@
                   style="right: 10px; bottom: 10px"
                 >
                   <i
-                    class="bi bi-send bg-body-secondary border-0"
+                    class="bi bi-send text-primary border-0"
                     style="font-size: 1.5rem"
                     data-bs-toggle="tooltip"
                     data-bs-title="Submit"
@@ -497,8 +492,6 @@
                   placeholder="OpenRouter API Key"
                   onchange="chatController.saveSetting('openRouterApiKey');"
                 />
-
-                <div class="mt-4">
                 <div class="mt-4">
                   <button
                     class="btn btn-link p-0 mt-2 text-secondary text-decoration-none d-flex align-items-center collapsed"

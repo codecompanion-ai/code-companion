@@ -8,29 +8,37 @@ class Planner {
   }
 
   async run(taskDescription) {
-    viewController.updateLoadingIndicator(true, 'Analyzing task and project...');
-    const taskClassificationResult = await this.classifyTask(taskDescription);
-    this.chatController.taskTab.renderTask(taskDescription, taskClassificationResult.concise_task_title);
-    this.chatController.chat.taskTitle = taskClassificationResult.concise_task_title;
+    try {
+      viewController.updateLoadingIndicator(true, 'Analyzing task and project...');
+      const taskClassificationResult = await this.classifyTask(taskDescription);
+      this.chatController.taskTab.renderTask(taskDescription, taskClassificationResult.concise_task_title);
+      this.chatController.chat.taskTitle = taskClassificationResult.concise_task_title;
 
-    if (!this.chatController.settings.enablePlanner) {
-      return;
-    }
+      if (!this.chatController.settings.enablePlanner) {
+        viewController.updateLoadingIndicator(false);
+        return;
+      }
 
-    if (taskClassificationResult.project_status === 'existing' && taskClassificationResult.task_type === 'multi_step') {
-      const taskContext = await this.performResearch(taskDescription);
-      this.chatController.chat.taskContext = this.formatTaskContextToMarkdown(taskContext);
-      this.taskContext = taskContext;
-      this.updateTaskContextFiles(taskContext);
-      this.chatController.taskTab.render();
-    }
+      if (
+        taskClassificationResult.project_status === 'existing' &&
+        taskClassificationResult.task_type === 'multi_step'
+      ) {
+        const taskContext = await this.performResearch(taskDescription);
+        this.chatController.chat.taskContext = this.formatTaskContextToMarkdown(taskContext);
+        this.taskContext = taskContext;
+        this.updateTaskContextFiles(taskContext);
+        this.chatController.taskTab.render();
+      }
 
-    if (taskClassificationResult.task_type === 'multi_step') {
-      viewController.updateLoadingIndicator(true, 'Creating task plan...');
-      const planResult = await this.createPlan(taskDescription);
-      console.log('plan', planResult);
-      this.chatController.chat.taskPlan = planResult.plan.map((item) => ({ ...item, completed: false }));
+      if (taskClassificationResult.task_type === 'multi_step') {
+        viewController.updateLoadingIndicator(true, 'Creating task plan...');
+        const planResult = await this.createPlan(taskDescription);
+        this.chatController.chat.taskPlan = planResult.plan.map((item) => ({ ...item, completed: false }));
+      }
+
       viewController.updateLoadingIndicator(false);
+    } catch (error) {
+      this.chatController.handleError(error);
     }
   }
 

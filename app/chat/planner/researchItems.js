@@ -76,23 +76,26 @@ const researchItems = [
   // },
   {
     name: 'task_relevant_files',
-    description: `Identify and prioritize files that are important for a software engineer to review before working on the task defined in <taskDescription>`,
+    description: `Identify and prioritize files that are important for a Software Engineer to review and inspect before working on the task defined in <taskDescription>`,
     prompt: `
-    Analyze the <taskDescription> and identify files that a software engineer needs to review or modify.
+    Analyze the <taskDescription> and identify files that a software engineer needs to review or modify or can reference or reuse some functionality from.
 
-    Think step by step to categorize files as follows:
+    For each file inspected think step by step to categorize files as follows:
 
     1. Directly relevant files:
        - Files containing logic directly related to the task
        - Files that will need to be modified to complete the task
+       - Files that have functionality that can be reused or referenced
+       - Files that mention some functionality related to the task
 
     2. Potentially relevant files:
-       - Files that help understand the task context
-       - Files with related functionality, but may not need direct modification
+       - All other inspected files that are not directly relevant but may be useful
+
+    If you not sure, classify a file as 'directly_relevant_files'.
 
     Steps:
     1. Identify key concepts and functionality from the <taskDescription>
-    2. Search for files with names or content matching these key concepts
+    2. Search for files with names or content matching these key concepts. User very long descriptive search query for semantic code search.
     3. Check import statements and function calls to find related files
     4. Include relevant configuration files if the task involves system settings
 

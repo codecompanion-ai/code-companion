@@ -53,12 +53,20 @@ const PLAN_PROMPT_TEMPLATE = `
 Act as an expert software architect.
 Create a detailed implementation plan for the given task. Focus on concrete actions don't include research steps since that was already done.
 Stick strictly to the task description and don't add any steps for improvements not related to the task.
-Use all information you have at hand to create the plan.
+
+When creating a plan, minimize the number of operations by ensuring files are created or modified only once. Each file creation or update should include all necessary content and functionality to avoid multiple modifications to the same file. This approach reduces redundancy and improves efficiency in the implementation process.
 
 1. For each sub-task:
    a) First discuss the sub-task, presenting all viable options and comparing pros and cons of each option in "thinking" function argument.
+      Include all that is applicable:
+      - File and folder names
+      - Class, methods that need to be created or modified
+      - Libraries and frameworks that need to be installed or used
+      - What sample code to use
+      - Logic that needs to be implemented
+      - Any other relevant information
    b) Then identify and justify the best option in "thinking" function argument.
-   c) Provide concise bullet-point description of the chosen approach in "step_detailed_description" function argument. Do not include any code or actual commands.
+   c) Provide concise bullet-point overview in "step_detailed_description" function argument with all information from the previous step. Do not include any code or actual commands, just a summary with file names, class names, methods, libraries, frameworks, etc.
    d) Create a concise title (max 5 words) for the sub-task.
    e) List the specific files that need modification or files that developer will need to know about in "relevant_files" function argument.
 
@@ -70,16 +78,17 @@ Use all information you have at hand to create the plan.
 
 3. Omit testing steps unless explicitly mentioned in the project overview.
 
-4. Ensure each step is actionable and directly contributes to task completion.
+4. Maintain a logical order of steps, considering dependencies between actions.
 
-5. Maintain a logical order of steps, considering dependencies between actions.
+5. Use clear, specific language to describe each action.
 
-6. Use clear, specific language to describe each action.
+6. Always add "Finalize" step to the plan:
+   a) review and reflect on implementation
+   b) discuss all changes and identify any potential bugs
+   c) check if all requirements have been implemented and are functional
+   c) include instructions on how to build and launch the project, see <additional_context>
 
-7. Always add "Finalize" step to the plan.
-Add: 1) review and reflect on implementation, 2) fix bugs, 3) build and launch the project based on the instructions.
-Use additional information provided to add information on how to build and launch the project based on the instructions.
-
+Follow these coding standards:
 <coding_standards>
 ${CODING_STANDARDS}
 </coding_standards>

@@ -96,8 +96,12 @@ class OpenAIModel {
       signal: this.chatController.abortController.signal,
     });
     log('Raw response', chatCompletion);
+    if (!chatCompletion.choices) {
+      throw new Error('Empty response from model. Please try again.');
+    }
     const usage = chatCompletion.usage?.prompt_tokens + chatCompletion.usage?.completion_tokens;
     this.chatController.updateUsage(usage, callParams.model);
+
     return {
       content: chatCompletion.choices[0].message.content,
       tool_calls: this.formattedToolCalls(chatCompletion.choices[0].message.tool_calls),

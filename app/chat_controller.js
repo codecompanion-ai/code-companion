@@ -135,6 +135,7 @@ class ChatController {
 
   handleError(error) {
     console.error('Error :', error);
+    viewController.updateLoadingIndicator(false);
     if (this.abortController.signal.aborted) {
       this.abortController = new AbortController();
       this.chat.addFrontendMessage('error', 'Request was aborted');

@@ -14,7 +14,7 @@ const BackgroundTask = require('./background_task');
 const OpenAIModel = require('./models/openai');
 const AnthropicModel = require('./models/anthropic');
 const { DEFAULT_LARGE_MODEL, DEFAULT_SMALL_MODEL, DEFAULT_EMBEDDINGS_MODEL } = require('./static/models_config');
-const { allEnabledTools, planningTools } = require('./tools/tools');
+const { allEnabledTools, allEnabledExcept } = require('./tools/tools');
 const CustomModelsManager = require('./chat/custom_models');
 
 const DEFAULT_SETTINGS = {
@@ -29,6 +29,7 @@ const DEFAULT_SETTINGS = {
   maxFilesToEmbed: 1000,
   commandToOpenFile: 'code',
   theme: 'dark',
+  enablePlanner: true,
 };
 
 class ChatController {
@@ -195,7 +196,12 @@ class ChatController {
       this.isProcessing = true;
       viewController.updateLoadingIndicator(true, '');
       const messages = await this.chat.chatContextBuilder.buildMessages(query);
-      const tools = allEnabledTools();
+      let tools;
+      if (this.settings.enablePlanner) {
+        tools = allEnabledTools();
+      } else {
+        tools = allEnabledExcept(['update_task_plan']);
+      }
       apiResponse = await this.model.call({ messages, model: this.settings.selectedModel, tools });
     } catch (error) {
       this.handleError(error);

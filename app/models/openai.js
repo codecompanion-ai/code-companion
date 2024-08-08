@@ -61,6 +61,9 @@ class OpenAIModel {
       }
     }
     log('Raw response', fullContent, toolCalls);
+    if (!fullContent && toolCalls.length === 0) {
+      throw new Error('Empty response from model. Please try again.');
+    }
     const usage = getTokenCount(callParams.messages) + getTokenCount(fullContent);
     this.chatController.updateUsage(usage, callParams.model);
     return {

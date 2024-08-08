@@ -13,6 +13,10 @@ class Planner {
     this.chatController.taskTab.renderTask(taskDescription, taskClassificationResult.concise_task_title);
     this.chatController.chat.taskTitle = taskClassificationResult.concise_task_title;
 
+    if (!this.chatController.settings.enablePlanner) {
+      return;
+    }
+
     if (taskClassificationResult.project_status === 'existing' && taskClassificationResult.task_type === 'multi_step') {
       const taskContext = await this.performResearch(taskDescription);
       this.chatController.chat.taskContext = this.formatTaskContextToMarkdown(taskContext);

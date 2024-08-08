@@ -498,6 +498,10 @@ function allEnabledTools() {
   return getEnabledTools((tool) => tool.enabled);
 }
 
+function allEnabledExcept(toolNames) {
+  return allEnabledTools().filter((tool) => !toolNames.includes(tool.name));
+}
+
 function planningTools() {
   const tools = getEnabledTools((tool) => tool.enabled && !tool.approvalRequired);
   const taskPlanningDoneTool = toolDefinitions.find((tool) => tool.name === 'task_planning_done');
@@ -531,6 +535,7 @@ function updateTaskPlan({ updatedTaskPlan }) {
 
 module.exports = {
   allEnabledTools,
+  allEnabledExcept,
   planningTools,
   toolDefinitions,
   previewMessageMapping,

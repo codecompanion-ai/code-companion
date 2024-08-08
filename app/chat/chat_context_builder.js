@@ -1,6 +1,6 @@
 const { getTokenCount } = require('../utils');
 
-const { TASK_EXECUTION_PROMPT_TEMPLATE } = require('../static/prompts');
+const { TASK_EXECUTION_PROMPT_TEMPLATE, FINISH_TASK_PROMPT_TEMPLATE } = require('../static/prompts');
 const { withErrorHandling, getSystemInfo, isTextFile } = require('../utils');
 const { normalizedFilePath } = require('../utils');
 const { log } = require('../utils');
@@ -90,6 +90,9 @@ class ChatContextBuilder {
   async addSystemMessage() {
     let systemMessage;
     systemMessage = TASK_EXECUTION_PROMPT_TEMPLATE;
+    if (!this.chat.taskPlan && this.chat.backendMessages.length > 5) {
+      systemMessage += FINISH_TASK_PROMPT_TEMPLATE;
+    }
     systemMessage += this.addProjectCustomInstructionsMessage();
     systemMessage = this.fromTemplate(systemMessage, '{osName}', getSystemInfo());
     systemMessage = this.fromTemplate(systemMessage, '{shellType}', chatController.terminalSession.shellType);
@@ -194,10 +197,14 @@ class ChatContextBuilder {
     }
     if (message.tool_calls) {
       message.tool_calls.forEach((toolCall) => {
-        content.push({
+        const toolCallContent = {
           type: 'tool_use',
           name: toolCall.function.name,
-        });
+        };
+        if (toolCall.function.arguments?.targetFile) {
+          toolCallContent.targetFile = toolCall.function.arguments.targetFile;
+        }
+        content.push(toolCallContent);
       });
     }
     const role = message.role === 'tool' ? 'user' : message.role;
@@ -265,7 +272,7 @@ class ChatContextBuilder {
     fileContents = await this.reduceRelevantFilesContext(fileContents, relevantFileNames);
 
     return fileContents
-      ? `\n\nCurrent content of the files (do not read these files again. Do not thank me for providing these files):\n<relevant_files_contents>${fileContents}\n</relevant_files_contents>`
+      ? `\n\nCurrent content of the files (do not read these files again. Do not thank me for providing these files)\nAny other messages in the chat may contain outdated versions of the files' contents.\n*Trust this as the true, current contents of the files!*:\n<relevant_files_contents>${fileContents}\n</relevant_files_contents>`
       : '';
   }
 

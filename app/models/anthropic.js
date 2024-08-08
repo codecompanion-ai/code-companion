@@ -2,6 +2,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 const { log } = require('../utils');
 
 const MAX_RETRIES = 5;
+const DEFAULT_TEMPERATURE = 0.0;
 
 class AnthropicModel {
   constructor({ model, apiKey, baseUrl, streamCallback, chatController }) {
@@ -24,7 +25,7 @@ class AnthropicModel {
     this.streamCallback = streamCallback;
   }
 
-  async call({ messages, model, tool = null, tools = null, temperature = 0.0, tool_choice = null }) {
+  async call({ messages, model, tool = null, tools = null, temperature = DEFAULT_TEMPERATURE, tool_choice = null }) {
     let response;
     const system = messages.find((message) => message.role === 'system');
     const callParams = {

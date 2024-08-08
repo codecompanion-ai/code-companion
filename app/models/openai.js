@@ -2,6 +2,7 @@ const { OpenAI } = require('openai');
 const { log, getTokenCount } = require('../utils');
 
 const MAX_RETRIES = 5;
+const DEFAULT_TEMPERATURE = 0.0;
 
 class OpenAIModel {
   constructor({ model, apiKey, baseUrl, streamCallback, chatController, defaultHeaders }) {
@@ -22,7 +23,7 @@ class OpenAIModel {
     this.streamCallback = streamCallback;
   }
 
-  async call({ messages, model, tool = null, tools = null, temperature = 0.0, tool_choice = null }) {
+  async call({ messages, model, tool = null, tools = null, temperature = DEFAULT_TEMPERATURE, tool_choice = null }) {
     let response;
     const callParams = {
       model: model || this.model,

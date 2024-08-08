@@ -70,16 +70,13 @@ async function readFiles({ filePaths }) {
 async function searchCode({ query, filenamesOnly = false }) {
   const count = filenamesOnly ? 30 : 10;
   const rerank = false;
-  let uniqueFiles = [];
 
   let results = await chatController.agent.projectController.searchEmbeddings({ query, count, rerank });
   if (results && results.length > 0) {
-    const files = results.map((result) => result.filePath);
-    uniqueFiles = [...new Set(files)];
     if (filenamesOnly) {
-      return uniqueFiles.join('\n');
+      return [...new Set(results.map((result) => result.filePath))].join('\n');
     }
-    return JSON.stringify(results);
+    return results.map((result) => result.fileContent).join('\n\n');
   }
 
   return `No results found`;

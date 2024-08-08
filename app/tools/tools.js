@@ -364,7 +364,7 @@ async function searchCode({ query, rerank = true, count = 10 }) {
     const files = results.map((result) => result.filePath);
     uniqueFiles = [...new Set(files)];
     frontendMessage = `Checked ${uniqueFiles.length} files:<br>${await Promise.all(uniqueFiles.map(async (filePath) => await openFileLink(filePath))).then((fileLinks) => fileLinks.join('<br>'))}`;
-    backendMessage = JSON.stringify(results);
+    backendMessage = results.map((result) => result.fileContent).join('\n\n');
     chatController.chat.addFrontendMessage('function', frontendMessage);
     return backendMessage;
   }

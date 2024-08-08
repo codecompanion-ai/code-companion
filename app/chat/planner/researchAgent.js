@@ -1,18 +1,23 @@
 const { tools } = require('./tools');
 const { log } = require('../../utils');
 
-const MAX_STEPS = 5;
+const MAX_STEPS = 4;
 
 const SYSTEM_MESSAGE_TEMPLATE = `
 {description}
 
 Use the available tools to gather information.
+Call multiple tools at once or with different arguments to gather all necessary information all at once.
 Output your findings using the 'output' tool when done or there is no more information to gather.
 Respond with 'null' for items that you couldn't find or were not able to research.
 
-Current directory is '{currentDirectory}'.
+
+Here is helpful information about the project and files:
+---
 
 {additionalInformation}
+
+Current directory is '{currentDirectory}'.
 `;
 
 class ResearchAgent {
@@ -79,7 +84,7 @@ class ResearchAgent {
     if (researchItem.additionalInformation) {
       if (Array.isArray(researchItem.additionalInformation)) {
         additionalInformation = await Promise.all(researchItem.additionalInformation.map((item) => this[item]()));
-        additionalInformation = additionalInformation.join('\n\n');
+        additionalInformation = additionalInformation.filter(Boolean).join('\n\n');
       } else {
         additionalInformation = await this[researchItem.additionalInformation]();
       }
@@ -133,7 +138,7 @@ class ResearchAgent {
   }
 
   async projectStructure() {
-    return `<projectStructure>\n${await this.chatController.agent.projectController.getFolderStructure(50, 4)}\n</projectStructure>`;
+    return `<projectStructure depth="2">\n${await this.chatController.agent.projectController.getFolderStructure(1)}\n</projectStructure>`;
   }
 
   getTaskDescription() {
@@ -141,11 +146,14 @@ class ResearchAgent {
   }
 
   additionalContext() {
+    const additionalContext = this.chatController.chat.taskContext;
+    if (!additionalContext) return '';
+
     return `<additionalContext>\n${this.chatController.chat.taskContext}\n</additionalContext>`;
   }
 
   async taskRelevantFilesContent() {
-    return await this.chatController.chat.chatContextBuilder.getRelevantFilesContents();
+    return await this.chatController.chat.chatContextBuilder.getRelevantFilesContents(false);
   }
 
   potentiallyRelevantFiles() {

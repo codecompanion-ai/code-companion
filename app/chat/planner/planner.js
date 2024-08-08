@@ -26,13 +26,21 @@ class Planner {
         const taskContext = await this.performResearch(taskDescription);
         this.chatController.chat.taskContext = this.formatTaskContextToMarkdown(taskContext);
         this.taskContext = taskContext;
-        this.updateTaskContextFiles(taskContext);
+        this.updateTaskContextFiles({
+          filesToDisable: this.taskContext['task_relevant_files']?.potentially_relevant_files,
+          filesToEnable: this.taskContext['task_relevant_files']?.directly_relevant_files,
+        });
         this.chatController.taskTab.render();
       }
 
       if (taskClassificationResult.task_type === 'multi_step') {
         viewController.updateLoadingIndicator(true, 'Creating task plan...');
         const planResult = await this.createPlan(taskDescription);
+        this.updateTaskContextFiles({
+          filesToDisable: Object.keys(this.chatController.chat.chatContextBuilder.getEnabledTaskContextFiles()),
+          filesToEnable: planResult.files_to_review,
+        });
+        console.log(planResult);
         this.chatController.chat.taskPlan = planResult.plan.map((item) => ({ ...item, completed: false }));
       }
 
@@ -65,16 +73,18 @@ class Planner {
     return result;
   }
 
-  updateTaskContextFiles(taskContext) {
+  updateTaskContextFiles({ filesToDisable, filesToEnable }) {
     const chatContextBuilder = this.chatController.chat.chatContextBuilder;
-    const taskContextFiles = taskContext['task_relevant_files']?.directly_relevant_files || [];
-    const potentiallyRelatedFiles = taskContext['task_relevant_files']?.potentially_relevant_files || [];
-    taskContextFiles.forEach((file) => {
-      chatContextBuilder.updateTaskContextFile(file, true);
-    });
-    potentiallyRelatedFiles.forEach((file) => {
-      chatContextBuilder.updateTaskContextFile(file, false);
-    });
+    if (Array.isArray(filesToDisable)) {
+      filesToDisable.forEach((file) => {
+        chatContextBuilder.updateTaskContextFile(file, false);
+      });
+    }
+    if (Array.isArray(filesToEnable)) {
+      filesToEnable.forEach((file) => {
+        chatContextBuilder.updateTaskContextFile(file, true);
+      });
+    }
   }
 
   formatTaskContextToMarkdown(projectContext) {

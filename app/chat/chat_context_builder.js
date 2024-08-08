@@ -262,13 +262,13 @@ class ChatContextBuilder {
     return `${projetState}${relevantFilesContents}`;
   }
 
-  async getRelevantFilesContents() {
+  async getRelevantFilesContents(withLineNumbers = true) {
     const relevantFileNames = await this.getListOfRelevantFiles();
     if (relevantFileNames.length === 0) {
       return '';
     }
 
-    let fileContents = await this.getFileContents(relevantFileNames);
+    let fileContents = await this.getFileContents(relevantFileNames, withLineNumbers);
     fileContents = await this.reduceRelevantFilesContext(fileContents, relevantFileNames);
 
     return fileContents
@@ -309,12 +309,12 @@ class ChatContextBuilder {
     return chatInteractionFiles;
   }
 
-  async getFileContents(fileList) {
+  async getFileContents(fileList, withLineNumbers = true) {
     if (fileList.length === 0) {
       return '';
     }
 
-    const fileReadPromises = fileList.map((file) => this.readFile(file));
+    const fileReadPromises = fileList.map((file) => this.readFile(file, withLineNumbers));
     const fileContents = await Promise.all(fileReadPromises);
 
     return fileList
@@ -376,7 +376,7 @@ class ChatContextBuilder {
     return result;
   }
 
-  async readFile(filePath) {
+  async readFile(filePath, withLineNumbers = true) {
     try {
       const stats = await fs.promises.stat(filePath);
       const isText = isTextFile(filePath);
@@ -386,7 +386,7 @@ class ChatContextBuilder {
         return isText ? 'File is too large to read' : 'File is not a text file, skipping reading';
       }
       const content = await fs.promises.readFile(filePath, 'utf8');
-      return this.addLineNumbers(content);
+      return withLineNumbers ? this.addLineNumbers(content) : content;
     } catch (error) {
       log(`Error reading file ${filePath}:`, error);
       return `Error reading file: ${error}`;

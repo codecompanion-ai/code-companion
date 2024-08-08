@@ -329,7 +329,7 @@ class ProjectController {
     return recentFiles;
   }
 
-  async getFolderStructure(fileLimit = 30, maxDepth = 2) {
+  async getFolderStructure(maxDepth = 1) {
     const ig = this.getIgnoreList(this.currentProject.path);
     const rootDir = chatController.agent.currentWorkingDir;
 
@@ -363,12 +363,8 @@ class ProjectController {
 
       if (structure.length === 0) {
         return 'The directory is empty.';
-      } else if (structure.length <= fileLimit) {
-        return structure.join('\n');
       } else {
-        // If more than fileLimit entries, only show top-level entries
-        const topLevelEntries = structure.filter((entry) => !entry.startsWith('  '));
-        return topLevelEntries.join('\n');
+        return structure.join('\n');
       }
     } catch (error) {
       chatController.chat.addFrontendMessage(

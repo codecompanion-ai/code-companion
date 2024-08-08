@@ -221,9 +221,11 @@ Task Classification Instructions:
 
 const taskPlan = {
   name: 'task_plan',
-  description: `Create a detailed implementation plan for completing the given taskDescription and relevant context and files.`,
+  description: `Act as an expert software architect.
+Create very detailed implementation plan to complete task defined in <taskDescription> below
+  `,
   model: 'large',
-  maxSteps: 3,
+  maxSteps: 2,
   prompt: PLAN_PROMPT_TEMPLATE,
   outputFormat: {
     plan: {
@@ -234,10 +236,10 @@ const taskPlan = {
           thinking: { type: 'string' },
           step_detailed_description: { type: 'string' },
           step_title: { type: 'string' },
-          relevant_files: { type: 'array', items: { type: 'string' } },
         },
       },
     },
+    files_to_review: { type: 'array', items: { type: 'string' }, description: 'List of absolute file paths' },
   },
   additionalInformation: [
     'getTaskDescription',

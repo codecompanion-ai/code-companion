@@ -233,7 +233,6 @@ Create very detailed implementation plan to complete task defined in <taskDescri
       items: {
         type: 'object',
         properties: {
-          thinking: { type: 'string' },
           step_detailed_description: { type: 'string' },
           step_title: { type: 'string' },
         },

@@ -55,9 +55,9 @@ class ChatContextBuilder {
       this.addTaskMessage(),
       this.addTaskContextMessage(),
       this.addTaskPlanMessage(),
+      relevantSourceCodeInformation,
       conversationSummary,
       lastUserMessage,
-      relevantSourceCodeInformation,
     ]
       .filter(Boolean)
       .join('\n');

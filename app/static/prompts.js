@@ -54,21 +54,12 @@ Before providing the plan ensure you have a complete understanding of the task a
 Use the tools provided to get the information you need if you don't have it.
 
 1. For each sub-task:
-   a) First discuss the sub-task, presenting all viable options and comparing pros and cons of each option in "thinking" function argument.
-      Include all that is applicable:
-      - File and folder names
-      - Class, methods that need to be created or modified
-      - Libraries and frameworks that need to be installed or used
-      - What sample code to use
-      - Logic that needs to be implemented
-      - Any other relevant information
-   b) Then identify and justify the best option in "thinking" function argument.
-   c) Provide bullet-point overview in "step_detailed_description" function argument
+   1) Provide bullet-point overview in "step_detailed_description" function argument
       - Do not include any code or actual commands
       - Include all file names, class names, methods, libraries, frameworks, folder names
       - Include all logic that needs to be implemented
       - Include all dependencies that need to be installed or will be used
-   d) Create a concise title (max 5 words) for the sub-task.
+   2) Create a concise title (max 5 words) for the sub-task.
 
 2. Include only necessary steps to complete the task, such as:
    - Modifying existing files

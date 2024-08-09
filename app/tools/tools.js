@@ -127,7 +127,8 @@ const toolDefinitions = [
   },
   {
     name: 'search',
-    description: 'Semantic search that can perform codebase search or Google search',
+    description:
+      'Use to search current project codebase or to search Google. Performs semantic search. Query should be long in a natural language',
     parameters: {
       type: 'object',
       properties: {
@@ -150,7 +151,8 @@ const toolDefinitions = [
   },
   {
     name: 'update_task_plan',
-    description: 'Update the task plan.Always provide all steps in the task plan',
+    description:
+      'Use to update the task plan. Keep the plan in sync with chat conversation. When user asks update the plan.  Always provide all steps in the task plan',
     parameters: {
       type: 'object',
       properties: {

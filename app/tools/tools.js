@@ -87,7 +87,7 @@ const toolDefinitions = [
   },
   {
     name: 'read_file',
-    description: 'Read files. Do not read files that are listed in the <relevant_files_contents> section.',
+    description: 'Read files. Do not read files again that are listed in the <current_files_contents> section.',
     parameters: {
       type: 'object',
       properties: {
@@ -224,7 +224,7 @@ async function previewMessageMapping(functionName, args) {
       code: '',
     },
     update_task_plan: {
-      message: 'Updating the task plan',
+      message: '',
       code: '',
     },
   };
@@ -532,6 +532,7 @@ function completeTaskPlanStep(taskPlanStepId) {
 function updateTaskPlan({ updatedTaskPlan }) {
   chatController.chat.taskPlan = updatedTaskPlan;
   chatController.taskTab.renderTaskPlan();
+  chatController.chat.addFrontendMessage('function', 'Plan updated');
   return 'Task plan updated successfully';
 }
 

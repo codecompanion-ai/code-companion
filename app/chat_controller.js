@@ -29,7 +29,7 @@ const DEFAULT_SETTINGS = {
   maxFilesToEmbed: 1000,
   commandToOpenFile: 'code',
   theme: 'dark',
-  enablePlanner: true,
+  enablePlanner: false,
 };
 
 class ChatController {

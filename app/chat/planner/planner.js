@@ -26,7 +26,7 @@ class Planner {
         const taskContext = await this.performResearch(taskDescription);
         this.chatController.chat.taskContext = this.formatTaskContextToMarkdown(taskContext);
         this.taskContext = taskContext;
-        this.updateTaskContextFiles({
+        await this.updateTaskContextFiles({
           filesToDisable: this.taskContext['task_relevant_files']?.potentially_relevant_files,
           filesToEnable: this.taskContext['task_relevant_files']?.directly_relevant_files,
         });
@@ -36,7 +36,7 @@ class Planner {
       if (taskClassificationResult.task_type === 'multi_step') {
         viewController.updateLoadingIndicator(true, 'Creating task plan...');
         const planResult = await this.createPlan(taskDescription);
-        this.updateTaskContextFiles({
+        await this.updateTaskContextFiles({
           filesToDisable: Object.keys(this.chatController.chat.chatContextBuilder.getEnabledTaskContextFiles()),
           filesToEnable: planResult.files_to_review,
         });
@@ -73,17 +73,13 @@ class Planner {
     return result;
   }
 
-  updateTaskContextFiles({ filesToDisable, filesToEnable }) {
+  async updateTaskContextFiles({ filesToDisable, filesToEnable }) {
     const chatContextBuilder = this.chatController.chat.chatContextBuilder;
     if (Array.isArray(filesToDisable)) {
-      filesToDisable.forEach((file) => {
-        chatContextBuilder.updateTaskContextFile(file, false);
-      });
+      await chatContextBuilder.updateTaskContextFiles(filesToDisable, false);
     }
     if (Array.isArray(filesToEnable)) {
-      filesToEnable.forEach((file) => {
-        chatContextBuilder.updateTaskContextFile(file, true);
-      });
+      await chatContextBuilder.updateTaskContextFiles(filesToEnable, true);
     }
   }
 

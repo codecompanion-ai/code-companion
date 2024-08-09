@@ -238,7 +238,11 @@ Create very detailed implementation plan to complete task defined in <taskDescri
         },
       },
     },
-    files_to_review: { type: 'array', items: { type: 'string' }, description: 'List of absolute file paths' },
+    files_to_review: {
+      type: 'array',
+      items: { type: 'string' },
+      description: 'List of absolute file paths of existing files',
+    },
   },
   additionalInformation: [
     'getTaskDescription',

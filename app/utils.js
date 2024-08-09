@@ -101,11 +101,7 @@ async function normalizedFilePath(targetFile) {
 
 async function isFileExists(filePath) {
   const normalizedPath = await normalizedFilePath(filePath);
-  if (fs.existsSync(normalizedPath)) {
-    const stats = fs.statSync(normalizedPath);
-    return stats.size > 0;
-  }
-  return false;
+  return fs.existsSync(normalizedPath);
 }
 
 function log(...args) {

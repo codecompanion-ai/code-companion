@@ -1,4 +1,4 @@
-const { getTokenCount } = require('../utils');
+const { getTokenCount, isFileExists } = require('../utils');
 
 const { TASK_EXECUTION_PROMPT_TEMPLATE, FINISH_TASK_PROMPT_TEMPLATE } = require('../static/prompts');
 const { withErrorHandling, getSystemInfo, isTextFile } = require('../utils');
@@ -22,9 +22,24 @@ class ChatContextBuilder {
     this.pastSummarizedMessages = '';
   }
 
-  updateTaskContextFile(fileName, enabled) {
-    this.taskContextFiles[fileName] = enabled;
+  async updateTaskContextFiles(fileNames, enabled) {
+    if (!Array.isArray(fileNames)) {
+      fileNames = [fileNames];
+    }
+
+    const updatePromises = fileNames.map(async (fileName) => {
+      const fileExists = await isFileExists(fileName);
+      if (fileExists) {
+        this.taskContextFiles[fileName] = enabled;
+      }
+    });
+
+    await Promise.all(updatePromises);
     chatController.taskTab.renderContextFiles();
+  }
+
+  async updateTaskContextFile(fileName, enabled) {
+    await this.updateTaskContextFiles(fileName, enabled);
   }
 
   getEnabledTaskContextFiles() {
@@ -272,7 +287,7 @@ class ChatContextBuilder {
     fileContents = await this.reduceRelevantFilesContext(fileContents, relevantFileNames);
 
     return fileContents
-      ? `\n\nCurrent content of the files (do not read these files again. Do not thank me for providing these files)\nAny other messages in the chat may contain outdated versions of the files' contents.\n*Trust this as the true, current contents of the files!*:\n<relevant_files_contents>${fileContents}\n</relevant_files_contents>`
+      ? `\n\nCurrent content of the files (do not read these files again. Do not thank me for providing these files)\n<current_files_contents>${fileContents}\n</current_files_contents>`
       : '';
   }
 
@@ -281,9 +296,7 @@ class ChatContextBuilder {
     const editedFiles = chatController.agent.projectController.getRecentModifiedFiles(this.lastEditedFilesTimestamp);
     this.lastEditedFilesTimestamp = Date.now();
     const newlyChangedFiles = [...new Set([...chatInteractionFiles, ...editedFiles])];
-    newlyChangedFiles.forEach((file) => {
-      this.updateTaskContextFile(file, true);
-    });
+    await this.updateTaskContextFiles(newlyChangedFiles, true);
 
     return Object.keys(this.getEnabledTaskContextFiles());
   }

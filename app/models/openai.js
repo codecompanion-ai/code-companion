@@ -2,6 +2,7 @@ const { OpenAI } = require('openai');
 const { log, getTokenCount } = require('../utils');
 
 const MAX_RETRIES = 5;
+const DEFAULT_TEMPERATURE = 0.0;
 
 class OpenAIModel {
   constructor({ model, apiKey, baseUrl, streamCallback, chatController, defaultHeaders }) {
@@ -22,15 +23,18 @@ class OpenAIModel {
     this.streamCallback = streamCallback;
   }
 
-  async call({ messages, model, tool = null, tools = null, temperature = 0.0 }) {
+  async call({ messages, model, tool = null, tools = null, temperature = DEFAULT_TEMPERATURE, tool_choice = null }) {
     let response;
     const callParams = {
       model: model || this.model,
       messages,
       temperature,
     };
-    if (tool !== null) {
-      response = await this.toolUse(callParams, tool);
+    if (tool_choice) {
+      callParams.tool_choice = tool_choice;
+    }
+    if (tool !== null || tool_choice === 'required') {
+      response = await this.toolUse(callParams, [tool, ...(tools || [])].filter(Boolean), tool_choice);
     } else {
       callParams.tools = tools.map((tool) => this.openAiToolFormat(tool));
       response = await this.stream(callParams);
@@ -58,14 +62,14 @@ class OpenAIModel {
       }
     }
     log('Raw response', fullContent, toolCalls);
-
+    if (!fullContent && toolCalls.length === 0) {
+      throw new Error('Empty response from model. Please try again.');
+    }
+    const usage = getTokenCount(callParams.messages) + getTokenCount(fullContent);
+    this.chatController.updateUsage(usage, callParams.model);
     return {
       content: fullContent,
       tool_calls: this.formattedToolCalls(toolCalls),
-      usage: {
-        input_tokens: getTokenCount(callParams.messages),
-        output_tokens: getTokenCount(fullContent),
-      },
     };
   }
 
@@ -85,21 +89,23 @@ class OpenAIModel {
     return existingCalls;
   }
 
-  async toolUse(callParams, tool) {
-    callParams.tools = [this.openAiToolFormat(tool)];
-    callParams.tool_choice = { type: 'function', function: { name: tool.name } };
+  async toolUse(callParams, tools, toolChoice) {
+    callParams.tools = tools.map((tool) => this.openAiToolFormat(tool));
+    callParams.tool_choice = toolChoice ? toolChoice : { type: 'function', function: { name: tools[0].name } };
     log('Calling model API:', callParams);
     const chatCompletion = await this.client.chat.completions.create(callParams, {
       signal: this.chatController.abortController.signal,
     });
     log('Raw response', chatCompletion);
-    const { result } = this.parseJSONSafely(chatCompletion.choices[0].message.tool_calls[0].function.arguments);
+    if (!chatCompletion.choices) {
+      throw new Error('Empty response from model. Please try again.');
+    }
+    const usage = chatCompletion.usage?.prompt_tokens + chatCompletion.usage?.completion_tokens;
+    this.chatController.updateUsage(usage, callParams.model);
+
     return {
-      content: result,
-      usage: {
-        input_tokens: chatCompletion.usage?.prompt_tokens,
-        output_tokens: chatCompletion.usage?.completion_tokens,
-      },
+      content: chatCompletion.choices[0].message.content,
+      tool_calls: this.formattedToolCalls(chatCompletion.choices[0].message.tool_calls),
     };
   }
 

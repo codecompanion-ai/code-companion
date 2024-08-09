@@ -76,13 +76,13 @@ class Browser {
 
   waitForPageLoadAndCollectOutput(url) {
     return new Promise((resolve) => {
-      let consoleOutput = [];
+      this.consoleOutput = [];
       const consoleListener = (event) => {
-        consoleOutput.push(`[${event.level}] ${event.message}`);
+        this.consoleOutput.push(`[${event.level}] ${event.message}`);
       };
       const httpErrorListener = (event) => {
         if (event.httpResponseCode >= 400) {
-          consoleOutput.push(`[3] Error loading ${event.url}: ${event.httpResponseCode} ${event.httpStatusText}`);
+          this.consoleOutput.push(`[3] Error loading ${event.url}: ${event.httpResponseCode} ${event.httpStatusText}`);
         }
       };
       this.webview.addEventListener('console-message', consoleListener);
@@ -92,8 +92,8 @@ class Browser {
         () => {
           this.webview.removeEventListener('console-message', consoleListener);
           this.webview.removeEventListener('did-frame-navigate', httpErrorListener);
-          this.indicateConsoleIssues(consoleOutput);
-          resolve(consoleOutput.join('\n'));
+          this.indicateConsoleIssues(this.consoleOutput);
+          resolve(this.consoleOutput.join('\n'));
         },
         { once: true },
       );
@@ -123,7 +123,10 @@ class Browser {
       default:
         userFriendlyMessage = `Failed to load the page: ${errorDescription}`;
     }
+
     this.showError(userFriendlyMessage);
+    this.consoleOutput.push(`[3] ${userFriendlyMessage}`);
+    this.indicateConsoleIssues(this.consoleOutput);
   }
 
   handleHttpError(httpResponseCode, httpStatusText) {

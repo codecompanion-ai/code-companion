@@ -21,6 +21,9 @@ class ChatHistory {
         lastBackendMessageId: chatController.chat.lastBackendMessageId,
         taskTitle: chatController.chat.taskTitle,
         task: chatController.chat.task,
+        taskPlan: chatController.chat.taskPlan,
+        taskContext: chatController.chat.taskContext,
+        taskContextFiles: chatController.chat.chatContextBuilder.taskContextFiles,
       },
       workingDir: chatController.agent.currentWorkingDir,
       selectedModel: chatController.settings.selectedModel,
@@ -48,9 +51,12 @@ class ChatHistory {
   async restoreChat(id) {
     const record = localStorage.get('chatHistory', {})[id];
     if (record) {
+      console.log('record', record);
       chatController.saveSetting('selectedModel', record.selectedModel);
       Object.assign(chatController.chat, record.chat);
+      chatController.chat.chatContextBuilder.taskContextFiles = record.chat.taskContextFiles;
       chatController.chat.updateUI();
+      chatController.taskTab.render();
       chatController.agent.projectController.openProject(record.workingDir);
     }
   }

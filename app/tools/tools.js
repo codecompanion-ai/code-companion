@@ -5,7 +5,7 @@ const { contextualCompress } = require('./contextual_compressor');
 const axios = require('axios');
 const { Readability } = require('@mozilla/readability');
 const { JSDOM } = require('jsdom');
-const { normalizedFilePath } = require('../utils');
+const { normalizedFilePath, openFileLink } = require('../utils');
 const { generateDiff } = require('./code_diff');
 
 const toolDefinitions = [
@@ -27,6 +27,7 @@ const toolDefinitions = [
             'Set to true only if you or the user need a screenshot of the page. Avoid taking a screenshot unless some problem need to be solved',
           default: false,
         },
+        taskPlanStepId: { type: 'integer' },
       },
     },
     executeFunction: browser,
@@ -47,6 +48,7 @@ const toolDefinitions = [
           type: 'string',
           description: `Output the entire completed source code for a file in a single step. Always use correct indentation and new lines.`,
         },
+        taskPlanStepId: { type: 'integer' },
       },
     },
     executeFunction: createFile,
@@ -76,6 +78,7 @@ const toolDefinitions = [
           description:
             'New content to replace the specified lines. Ensure correct indentation for each new line of code inserted.',
         },
+        taskPlanStepId: { type: 'integer' },
       },
     },
     executeFunction: replaceInFile,
@@ -84,13 +87,14 @@ const toolDefinitions = [
   },
   {
     name: 'read_file',
-    description: 'Read files. Do not read files that are listed in the <relevant_files_contents> section.',
+    description: 'Read files. Do not read files again that are listed in the <current_files_contents> section.',
     parameters: {
       type: 'object',
       properties: {
         targetFile: {
           type: 'string',
         },
+        taskPlanStepId: { type: 'integer' },
       },
     },
     executeFunction: readFile,
@@ -114,6 +118,7 @@ const toolDefinitions = [
             'When set to false, will hang until command finished executing. Set to true always when you need to run a webserver right before opening a browser',
           default: false,
         },
+        taskPlanStepId: { type: 'integer' },
       },
     },
     executeFunction: shell,
@@ -122,7 +127,8 @@ const toolDefinitions = [
   },
   {
     name: 'search',
-    description: 'Semantic search that can perform codebase search or Google search',
+    description:
+      'Use to search current project codebase or to search Google. Performs semantic search. Query should be long in a natural language',
     parameters: {
       type: 'object',
       properties: {
@@ -136,6 +142,7 @@ const toolDefinitions = [
           type: 'string',
           description: `Long, descriptive natural language search query`,
         },
+        taskPlanStepId: { type: 'integer' },
       },
     },
     executeFunction: unifiedSearch,
@@ -143,15 +150,29 @@ const toolDefinitions = [
     requiresApproval: false,
   },
   {
-    name: 'task_planning_done',
-    description: 'Indicate that task planning is done and ready to start implementation',
+    name: 'update_task_plan',
+    description:
+      'Use to update the task plan. Keep the plan in sync with chat conversation. When user asks update the plan.  Always provide all steps in the task plan',
     parameters: {
       type: 'object',
-      properties: {},
+      properties: {
+        updatedTaskPlan: {
+          type: 'array',
+          description: 'The updated task plan array',
+          items: {
+            type: 'object',
+            properties: {
+              step_title: { type: 'string' },
+              step_detailed_description: { type: 'string' },
+              completed: { type: 'boolean' },
+            },
+          },
+        },
+      },
     },
-    executeFunction: taskPlanningDone,
-    enabled: false,
-    requiresApproval: false,
+    executeFunction: updateTaskPlan,
+    enabled: true,
+    approvalRequired: false,
   },
 ];
 
@@ -184,7 +205,7 @@ async function previewMessageMapping(functionName, args) {
     },
     create_or_overwrite_file: {
       message: `Creating a file ${args.targetFile}`,
-      code: codeDiff ? `\n\`\`\`diff\n${codeDiff}\n\`\`\`` : `\n\`\`\`${args.createText}\n\`\`\``,
+      code: codeDiff ? `\n\`\`\`diff\n${codeDiff}\n\`\`\`` : `\n\`\`\`\n${args.createText}\n\`\`\``,
     },
     read_file: {
       message: '',
@@ -202,20 +223,15 @@ async function previewMessageMapping(functionName, args) {
       message: `Searching ${args.type} for '${args.query}'`,
       code: '',
     },
-    task_planning_done: {
-      message: 'Task planning is done.',
+    update_task_plan: {
+      message: '',
       code: '',
     },
   };
   return mapping[functionName];
 }
 
-function taskPlanningDone() {
-  chatController.chat.chatContextBuilder.taskNeedsPlan = false;
-  return 'Task planning is done.';
-}
-
-async function browser({ include_screenshot, url }) {
+async function browser({ include_screenshot, url, taskPlanStepId }) {
   let assistantScreenshotMessage = '';
 
   viewController.updateLoadingIndicator(true, 'Waiting for the page to load...');
@@ -228,10 +244,11 @@ async function browser({ include_screenshot, url }) {
     assistantScreenshotMessage = `\nScreenshot of the webpage was taken and attached in the user message`;
   }
   chatController.chat.addFrontendMessage('function', 'Opened in browser');
+  completeTaskPlanStep(taskPlanStepId);
   return `Browser opened ${url.startsWith('data:') ? 'data URL to show visualization' : url}.\n<console_output>${consoleOutput}</console_output>${assistantScreenshotMessage}`;
 }
 
-async function createFile({ targetFile, createText }) {
+async function createFile({ targetFile, createText, taskPlanStepId }) {
   if (!targetFile) {
     return respondTargetFileNotProvided();
   }
@@ -241,12 +258,12 @@ async function createFile({ targetFile, createText }) {
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
   }
   fs.writeFileSync(filePath, createText);
+  completeTaskPlanStep(taskPlanStepId);
   chatController.chat.addFrontendMessage('function', `File ${await openFileLink(filePath)} created successfully`);
-
   return `File '${targetFile}' created successfully`;
 }
 
-async function replaceInFile({ targetFile, startLineNumber, endLineNumber, replaceWith }) {
+async function replaceInFile({ targetFile, startLineNumber, endLineNumber, replaceWith, taskPlanStepId }) {
   if (!targetFile) {
     return respondTargetFileNotProvided();
   }
@@ -274,7 +291,7 @@ async function replaceInFile({ targetFile, startLineNumber, endLineNumber, repla
   fs.writeFileSync(filePath, newContent);
   const successMessage = `File ${await openFileLink(filePath)} updated successfully.`;
   chatController.chat.addFrontendMessage('function', successMessage);
-
+  completeTaskPlanStep(taskPlanStepId);
   return `File ${filePath} updated successfully.\n<changes_made_to_file>${codeDiff}</changes_made_to_file>`;
 }
 
@@ -292,7 +309,7 @@ async function codeAfterReplace({ targetFile, startLineNumber, endLineNumber, re
   };
 }
 
-async function readFile({ targetFile }) {
+async function readFile({ targetFile, taskPlanStepId }) {
   if (!targetFile) {
     return respondTargetFileNotProvided();
   }
@@ -309,14 +326,16 @@ async function readFile({ targetFile }) {
   return `File "${filePath}" was read.`;
 }
 
-async function shell({ command, background }) {
+async function shell({ command, background, taskPlanStepId }) {
   viewController.updateLoadingIndicator(true, 'Executing shell command ...  (click Stop to cancel or use Ctrl+C)');
   let commandResult;
   if (background === true) {
     chatController.terminalSession.executeShellCommand(command);
+    completeTaskPlanStep(taskPlanStepId);
     return 'Command started in the background';
   } else {
     commandResult = await chatController.terminalSession.executeShellCommand(command);
+    completeTaskPlanStep(taskPlanStepId);
   }
   // Preserve first 5 lines and last 95 lines if more than 100 lines
   const lines = commandResult.split('\n');
@@ -347,7 +366,7 @@ async function searchCode({ query, rerank = true, count = 10 }) {
     const files = results.map((result) => result.filePath);
     uniqueFiles = [...new Set(files)];
     frontendMessage = `Checked ${uniqueFiles.length} files:<br>${await Promise.all(uniqueFiles.map(async (filePath) => await openFileLink(filePath))).then((fileLinks) => fileLinks.join('<br>'))}`;
-    backendMessage = JSON.stringify(results);
+    backendMessage = results.map((result) => result.fileContent).join('\n\n');
     chatController.chat.addFrontendMessage('function', frontendMessage);
     return backendMessage;
   }
@@ -393,32 +412,6 @@ async function googleSearch({ query }) {
     `Checked websites:<br>${results.map((result) => `<a href="${result.link}" class="text-truncate ms-2">${result.link}</a>`).join('<br>')}`,
   );
   return JSON.stringify(firstCompressedResult);
-}
-
-async function openFileLink(filepath) {
-  try {
-    let absolutePath = path.normalize(filepath);
-
-    if (!path.isAbsolute(absolutePath)) {
-      if (chatController.agent.projectController.currentProject) {
-        absolutePath = path.join(chatController.agent.projectController.currentProject.path, absolutePath);
-      } else {
-        absolutePath = await normalizedFilePath(absolutePath);
-      }
-    }
-
-    let filename;
-    if (chatController.agent.projectController.currentProject) {
-      filename = path.relative(chatController.agent.projectController.currentProject.path, absolutePath);
-    } else {
-      filename = path.relative(chatController.agent.currentWorkingDir, absolutePath);
-    }
-
-    return `<a href="#" onclick="event.preventDefault(); viewController.openFileInIDE('${absolutePath.replace(/\\/g, '\\\\')}')">${filename}</a>`;
-  } catch (error) {
-    console.error(error);
-    return filepath;
-  }
 }
 
 async function fetchAndParseUrl(url) {
@@ -473,13 +466,15 @@ Respond with a boolean value: "true" or "false"`;
   return result !== false;
 }
 
-async function unifiedSearch({ type, query }) {
+async function unifiedSearch({ type, query, taskPlanStepId }) {
   switch (type) {
     case 'codebase':
       const codebaseResult = await searchCode({ query });
+      completeTaskPlanStep(taskPlanStepId);
       return `Codebase search result for "${query}":\n${codebaseResult}`;
     case 'google':
       const result = await googleSearch({ query });
+      completeTaskPlanStep(taskPlanStepId);
       return `Google search result for "${query}":\n${result}`;
     default:
       return 'Invalid search type specified.';
@@ -505,6 +500,10 @@ function allEnabledTools() {
   return getEnabledTools((tool) => tool.enabled);
 }
 
+function allEnabledExcept(toolNames) {
+  return allEnabledTools().filter((tool) => !toolNames.includes(tool.name));
+}
+
 function planningTools() {
   const tools = getEnabledTools((tool) => tool.enabled && !tool.approvalRequired);
   const taskPlanningDoneTool = toolDefinitions.find((tool) => tool.name === 'task_planning_done');
@@ -517,9 +516,32 @@ function planningTools() {
   return tools;
 }
 
+function completeTaskPlanStep(taskPlanStepId) {
+  const zeroBasedIndex = taskPlanStepId - 1;
+  const taskPlan = chatController.chat.taskPlan;
+  if (taskPlan) {
+    for (let i = 0; i <= zeroBasedIndex; i++) {
+      if (taskPlan[i]) {
+        taskPlan[i].completed = true;
+      }
+    }
+    chatController.taskTab.renderTaskPlan();
+  }
+}
+
+function updateTaskPlan({ updatedTaskPlan }) {
+  chatController.chat.taskPlan = updatedTaskPlan;
+  chatController.taskTab.renderTaskPlan();
+  chatController.chat.addFrontendMessage('function', 'Plan updated');
+  return 'Task plan updated successfully';
+}
+
 module.exports = {
   allEnabledTools,
+  allEnabledExcept,
   planningTools,
   toolDefinitions,
   previewMessageMapping,
+  completeTaskPlanStep,
+  updateTaskPlan,
 };

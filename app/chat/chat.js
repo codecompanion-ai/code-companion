@@ -1,5 +1,4 @@
 const { clipboard } = require('electron');
-const marked = require('marked');
 
 const ChatHistory = require('./chat_history');
 const ChatContextBuilder = require('./chat_context_builder');
@@ -20,15 +19,17 @@ class Chat {
   }
 
   isEmpty() {
-    return this.backendMessages.length === 0;
+    return this.backendMessages.length === 0 && !this.taskPlan;
   }
 
   onlyHasImages() {
+    if (this.backendMessages.length === 0) {
+      return false;
+    }
+
     return this.backendMessages.every((message) => {
       if (Array.isArray(message.content)) {
         return message.content.some((item) => item.type === 'image_url');
-      } else {
-        return false; // If content is not an array, it's not an image message
       }
     });
   }
@@ -40,47 +41,8 @@ class Chat {
 
   async addTask(task) {
     this.task = task;
-    this.renderTask();
-    await this.createTaskTitle();
-    this.renderTask();
+    chatController.taskTab.renderTask(task);
     viewController.activateTab('task-tab');
-  }
-
-  renderTask() {
-    if (!this.task) {
-      return;
-    }
-
-    const taskTitle =
-      this.taskTitle || this.task.split(' ').slice(0, 4).join(' ') + (this.task.split(' ').length > 4 ? '...' : '');
-    document.getElementById('taskTitle').innerText = taskTitle;
-    document.getElementById('taskContainer').innerHTML = marked.parse(this.task);
-    document.getElementById('messageInput').setAttribute('placeholder', 'Send message...');
-  }
-
-  async createTaskTitle() {
-    let taskTitle = '';
-
-    if (this.task.split(' ').length < 4) {
-      this.taskTitle = this.task;
-      return;
-    }
-
-    const prompt = `Create a concise, engaging task title (2-4 words) for the following task description:\n<task_description>\n${this.task}\n</task_description>`;
-    const format = {
-      type: 'string',
-      result: 'Shortened task title',
-    };
-
-    try {
-      taskTitle = await chatController.backgroundTask.run({ prompt, format });
-    } catch (error) {
-      taskTitle = this.task.split(' ').slice(0, 4).join(' ') + (this.task.split(' ').length > 4 ? '...' : ''); // Fallback task title
-    }
-
-    if (taskTitle) {
-      this.taskTitle = taskTitle;
-    }
   }
 
   getLastUserMessage() {
@@ -184,7 +146,6 @@ class Chat {
     document.getElementById('output').innerHTML = formattedMessages;
     viewController.scrollToBottom();
     viewController.addCopyCodeButtons();
-    this.renderTask();
     viewController.showWelcomeContent();
     viewController.activateTooltips();
   }

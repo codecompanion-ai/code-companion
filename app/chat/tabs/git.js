@@ -138,11 +138,14 @@ class Git {
     const diffConfig = {
       drawFileList: false,
       highlight: true,
-      matching: 'lines',
+      matching: 'none',
       colorScheme: chatController.settings.theme,
       showDiffOnly: false,
       fileContentToggle: true,
       diffMaxChanges: 500,
+      renderNothingWhenEmpty: false,
+      maxLineSizeInBlockForComparison: 200,
+      diffStyle: 'word',
     };
 
     let diffResult;

@@ -56,6 +56,7 @@ class ProjectController {
     this.currentProject = project;
     document.title = project.name + ' - CodeCompanion';
     viewController.showWelcomeContent();
+    viewController.toogleChatInputContainer();
     this.git = new Git(project.path);
   }
 
@@ -326,6 +327,53 @@ class ProjectController {
       .map((file) => file.path);
 
     return recentFiles;
+  }
+
+  async getFolderStructure(maxDepth = 1) {
+    const ig = this.getIgnoreList(this.currentProject.path);
+    const rootDir = chatController.agent.currentWorkingDir;
+
+    // Recursive function to list files and directories
+    const listEntries = async (dir, depth = 0, currentPath = '') => {
+      if (depth > maxDepth) return [];
+
+      const entries = await fs.promises.readdir(dir, { withFileTypes: true });
+      const filteredEntries = entries.filter((entry) => !ig.ignores(path.join(currentPath, entry.name)));
+
+      const result = [];
+      for (const entry of filteredEntries) {
+        const entryPath = path.join(dir, entry.name);
+        const relativePath = path.join(currentPath, entry.name);
+
+        if (entry.isDirectory()) {
+          result.push(`${'  '.repeat(depth)}- ${entry.name}/`);
+          if (depth < maxDepth) {
+            const subEntries = await listEntries(entryPath, depth + 1, relativePath);
+            result.push(...subEntries);
+          }
+        } else {
+          result.push(`${'  '.repeat(depth)}- ${entry.name}`);
+        }
+      }
+      return result;
+    };
+
+    try {
+      const structure = await listEntries(rootDir);
+
+      if (structure.length === 0) {
+        return 'The directory is empty.';
+      } else {
+        return structure.join('\n');
+      }
+    } catch (error) {
+      chatController.chat.addFrontendMessage(
+        'error',
+        `Error occurred while checking directory structure in ${rootDir}.
+     <br>Please change directory where app can read/write files or update permissions for current directory.`,
+      );
+      return;
+    }
   }
 }
 

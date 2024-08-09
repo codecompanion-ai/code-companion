@@ -5,14 +5,16 @@ const autosize = require('autosize');
 
 const Agent = require('./chat/agent');
 const Chat = require('./chat/chat');
+const Planner = require('./chat/planner/planner');
 const TerminalSession = require('./tools/terminal_session');
 const Browser = require('./chat/tabs/browser');
+const TaskTab = require('./chat/tabs/task');
 const { trackEvent } = require('@aptabase/electron/renderer');
 const BackgroundTask = require('./background_task');
 const OpenAIModel = require('./models/openai');
 const AnthropicModel = require('./models/anthropic');
 const { DEFAULT_LARGE_MODEL, DEFAULT_SMALL_MODEL, DEFAULT_EMBEDDINGS_MODEL } = require('./static/models_config');
-const { allEnabledTools, planningTools } = require('./tools/tools');
+const { allEnabledTools, allEnabledExcept } = require('./tools/tools');
 const CustomModelsManager = require('./chat/custom_models');
 
 const DEFAULT_SETTINGS = {
@@ -27,6 +29,7 @@ const DEFAULT_SETTINGS = {
   maxFilesToEmbed: 1000,
   commandToOpenFile: 'code',
   theme: 'dark',
+  enablePlanner: false,
 };
 
 class ChatController {
@@ -41,13 +44,9 @@ class ChatController {
     this.agent = new Agent();
     this.terminalSession = new TerminalSession();
     this.browser = new Browser();
+    this.taskTab = new TaskTab(this);
     this.processMessageChange = this.processMessageChange.bind(this);
-    this.submitMessage = this.submitMessage.bind(this);
-    this.usage = {
-      input_tokens: 0,
-      output_tokens: 0,
-      total_tokens: 0,
-    };
+    this.usage = {};
   }
 
   loadAllSettings() {
@@ -136,6 +135,7 @@ class ChatController {
 
   handleError(error) {
     console.error('Error :', error);
+    viewController.updateLoadingIndicator(false);
     if (this.abortController.signal.aborted) {
       this.abortController = new AbortController();
       this.chat.addFrontendMessage('error', 'Request was aborted');
@@ -163,7 +163,7 @@ class ChatController {
     this.process('', false);
   }
 
-  async process(query, renderUserMessage = true, reflectMessage = null) {
+  async process(query, renderUserMessage = true) {
     let apiResponse;
     document.getElementById('retry_button').setAttribute('hidden', true);
 
@@ -196,10 +196,14 @@ class ChatController {
     try {
       this.isProcessing = true;
       viewController.updateLoadingIndicator(true, '');
-      const messages = await this.chat.chatContextBuilder.buildMessages(query, reflectMessage);
-      const tools = this.chat.chatContextBuilder.taskNeedsPlan ? planningTools() : allEnabledTools();
+      const messages = await this.chat.chatContextBuilder.buildMessages(query);
+      let tools;
+      if (this.settings.enablePlanner) {
+        tools = allEnabledTools();
+      } else {
+        tools = allEnabledExcept(['update_task_plan']);
+      }
       apiResponse = await this.model.call({ messages, model: this.settings.selectedModel, tools });
-      this.updateUsage(apiResponse.usage);
     } catch (error) {
       this.handleError(error);
     } finally {
@@ -210,14 +214,10 @@ class ChatController {
     await this.agent.runAgent(apiResponse);
   }
 
-  updateUsage(usage) {
+  updateUsage(usage, model) {
     if (!usage) return;
 
-    this.usage = {
-      input_tokens: usage.input_tokens,
-      output_tokens: usage.output_tokens,
-      total_tokens: this.usage.total_tokens + usage.input_tokens + usage.output_tokens,
-    };
+    this.usage[model] = this.usage[model] ? this.usage[model] + usage : usage;
     viewController.updateFooterMessage();
   }
 
@@ -263,13 +263,31 @@ class ChatController {
   }
 
   async processNewUserMessage(userMessage) {
-    // only submitted form UI
     if (this.chat.isEmpty() || this.chat.onlyHasImages()) {
-      this.chat.addTask(userMessage);
       document.getElementById('projectsCard').innerHTML = '';
-      await this.process();
+      document.getElementById('messageInput').setAttribute('placeholder', 'Send message...');
+      this.chat.addTask(userMessage);
+      await new Planner(this).run(userMessage);
+      await this.askUserForPlanApproval();
     } else {
       await this.process(userMessage);
+    }
+  }
+
+  async askUserForPlanApproval() {
+    if (!this.chat.taskPlan) {
+      await this.process();
+      return;
+    }
+
+    this.chat.addFrontendMessage('plan', this.taskTab.planHtml(true));
+    const decision = await this.agent.showApprovalButtons();
+    if (decision === 'reject') {
+      this.chat.addBackendMessage('user', 'lets make adjustments to the task plan and update it');
+      this.chat.addFrontendMessage('info', 'Please provide feedback below how to improve and click send');
+    } else {
+      this.taskTab.renderTaskPlan();
+      await this.process();
     }
   }
 
@@ -292,11 +310,6 @@ class ChatController {
 
   async clearChat() {
     trackEvent(`new_chat`);
-    if (this.chat && this.chat.task) {
-      document.getElementById('taskTitle').innerText = '';
-      document.getElementById('taskContainer').innerHTML =
-        '<div class="text-secondary">Provide task details in the chat input to start a new task</div>';
-    }
     this.chat = new Chat();
     this.agent = new Agent(this.agent.projectController.currentProject);
     this.initializeModel();
@@ -307,24 +320,19 @@ class ChatController {
     document.getElementById('retry_button').setAttribute('hidden', true);
     document.getElementById('approval_buttons').setAttribute('hidden', true);
     document.getElementById('messageInput').disabled = false;
-    this.chat.renderTask();
+    this.taskTab.render();
     document.getElementById('messageInput').setAttribute('placeholder', 'Provide task details...');
     this.stopProcess = false;
-    this.usage = {
-      input_tokens: 0,
-      output_tokens: 0,
-      total_tokens: 0,
-    };
+    this.usage = {};
     viewController.updateFooterMessage();
     viewController.showWelcomeContent();
-
+    viewController.toogleChatInputContainer();
     this.agent.projectState = {
       complexity: '',
       currentWorkingDir: '',
       folderStructure: '',
       requirementsChecklist: '',
     };
-
     onboardingController.showAllTips();
     viewController.onShow();
   }

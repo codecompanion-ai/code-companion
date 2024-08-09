@@ -195,6 +195,7 @@ class ViewController {
       file: { icon: 'paperclip', rowClass: 'mt-3', rowPadding: '3' },
       onboarding: { icon: 'info-circle', rowClass: 'mt-3', rowPadding: '3' },
       assistant: { icon: 'stars text-primary', rowClass: 'mt-3', rowPadding: '3' },
+      plan: { icon: 'list-task', rowClass: 'mt-3', rowPadding: '3', parse: false },
     };
 
     const roleSetting = roleSettings[item.role];
@@ -202,12 +203,13 @@ class ViewController {
   }
 
   createMessageHTML(roleSetting, content, buttons) {
+    const contentHtml = roleSetting.parse === false ? content : content ? marked.parse(content) : '';
     return `<div class="row ${roleSetting.rowClass} align-items-start flex-nowrap">
               <div class="col-auto pt-${roleSetting.rowPadding} flex-shrink-0">
                 ${roleSetting.icon ? `<i class="bi bi-${roleSetting.icon}"></i>` : '&nbsp;'}
               </div>
               <div class="col pt-${roleSetting.rowPadding} flex-grow-1 min-width-0">
-                <div class="overflow-hidden">${content ? marked.parse(content) : ''}</div>
+                <div class="overflow-hidden">${contentHtml}</div>
                 ${buttons}
               </div>
             </div>`;
@@ -229,20 +231,22 @@ class ViewController {
   }
 
   updateFooterMessage(message) {
-    const formatTokens = (tokens) => (tokens >= 1000 ? (tokens / 1000).toFixed(1) + 'K' : tokens);
-
-    const usageMessage = this.getUsageMessage(formatTokens);
+    const usageMessage = this.getUsageMessage();
     const combinedMessage = this.combineMessages(message, usageMessage);
 
     this.setFooterMessage(combinedMessage);
   }
 
-  getUsageMessage(formatTokens) {
-    const { input_tokens, output_tokens, total_tokens } = chatController.usage;
-    if (total_tokens > 0) {
-      return `Last input: ${formatTokens(input_tokens)}, output: ${formatTokens(output_tokens)}. Total this task: ${formatTokens(total_tokens)} tokens`;
-    }
-    return '';
+  getUsageMessage() {
+    const formatTokens = (tokens) => (tokens >= 1000 ? (tokens / 1000).toFixed(1) + 'K' : tokens);
+    if (!chatController.usage || Object.keys(chatController.usage).length === 0) return '';
+
+    return (
+      'Tokens: ' +
+      Object.entries(chatController.usage)
+        .map(([model, tokens]) => `${model}: ${formatTokens(tokens)}`)
+        .join(' | ')
+    );
   }
 
   combineMessages(message, usageMessage) {
@@ -331,6 +335,17 @@ class ViewController {
     });
   }
 
+  toogleChatInputContainer() {
+    const chatInputContainer = document.getElementById('chatInputContainer');
+    const isVisible = chatController.agent.projectController.currentProject !== null;
+    chatInputContainer.style.display = isVisible ? 'block' : 'none';
+
+    if (isVisible) {
+      const chatInput = document.getElementById('messageInput');
+      chatInput.focus();
+    }
+  }
+
   activateTooltips() {
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
     [...tooltipTriggerList].forEach((tooltipTriggerEl) => {
@@ -338,7 +353,7 @@ class ViewController {
       tooltipTriggerEl.addEventListener('shown.bs.tooltip', () => {
         setTimeout(() => {
           tooltip.hide();
-        }, 2000);
+        }, 5000);
       });
     });
   }

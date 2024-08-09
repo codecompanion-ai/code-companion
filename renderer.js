@@ -15,6 +15,7 @@ const { processFile, handleDrop } = require('./app/chat/file_handler');
 const { MODEL_OPTIONS, SMALL_MODEL_OPTIONS, EMBEDDINGS_MODEL_OPTIONS } = require('./app/static/models_config');
 
 const localStorage = new Store();
+const cache = new Map();
 const chatController = new ChatController();
 const viewController = new ViewController();
 const onboardingController = new OnboardingController();
@@ -91,10 +92,6 @@ document.getElementById('messageInput').addEventListener('keydown', debouncedSub
 
 document.getElementById('reject_button').addEventListener('click', function () {
   chatController.agent.userDecision = 'reject';
-});
-
-document.getElementById('reflect_button').addEventListener('click', function () {
-  chatController.agent.userDecision = 'reflect';
 });
 
 document.getElementById('approve_button').addEventListener('click', function () {

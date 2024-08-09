@@ -91,23 +91,9 @@
             <div id="output" class="m-2"></div>
             <div id="streaming_output" class="m-2"></div>
             <div id="approval_buttons" class="text-center mb-3" hidden>
-              <button
-                id="reject_button"
-                type="button"
-                class="btn btn-link-secondary mx-2 btn-sm"
-                data-bs-toggle="tooltip"
-                data-bs-title="Reject action, you can still continue after"
-              >
-                <i class="bi bi-x-circle"></i> Reject
-              </button>
-              <button
-                id="reflect_button"
-                type="button"
-                class="btn btn-link-secondary mx-2 btn-sm"
-                data-bs-toggle="tooltip"
-                data-bs-title="Improve code, self reflection"
-              >
-                <i class="bi bi-arrow-clockwise"></i> Improve
+              <button id="reject_button" type="button" class="btn btn-link-secondary mx-2 btn-sm">
+                <i class="bi bi-arrow-counterclockwise"></i>
+                <span>Provide feedback & regenerate</span>
               </button>
               <button id="approve_button" type="button" class="btn btn-primary mx-2 btn-sm">
                 <i class="bi bi-check-lg"></i> Approve
@@ -125,7 +111,7 @@
             </div>
           </div>
 
-          <div class="bg-body px-3 fixed-bottom" id="chatInputContainer" style="width: 50%">
+          <div class="bg-body px-3 fixed-bottom" id="chatInputContainer" style="width: 50%; display: none">
             <div class="d-flex align-items-end ms-1 bottom-0 bg-body py-3">
               <button
                 class="btn shadow-none btn-sm text-decoration-none me-1"
@@ -159,7 +145,7 @@
                   style="right: 10px; bottom: 10px"
                 >
                   <i
-                    class="bi bi-send bg-body-secondary border-0"
+                    class="bi bi-send text-primary border-0"
                     style="font-size: 1.5rem"
                     data-bs-toggle="tooltip"
                     data-bs-title="Submit"
@@ -260,17 +246,73 @@
             </li>
           </ul>
           <div
-            class="tab-content border border-top-0 mb-3"
+            class="tab-content border border-top-0 mb-3 overflow-y-auto"
             id="rightPanelTabContent"
             style="height: calc(100vh - 120px)"
           >
             <div class="tab-pane show active fade h-100" id="shell" role="tabpanel" aria-labelledby="shell-tab">
               <div id="terminal_output" class="h-100"></div>
             </div>
-            <div class="tab-pane fade p-5" id="task" role="tabpanel" aria-labelledby="task-tab">
-              <h3 id="taskTitle" class="mb-3"></h3>
-              <div id="taskContainer">
-                <div class="text-secondary">Provide task details in the chat input to start a new task</div>
+            <div class="tab-pane fade h-100 p-5" id="task" role="tabpanel" aria-labelledby="task-tab">
+              <h3 id="taskTitle" class="mb-3">New task</h3>
+              <hr />
+              <div id="taskContainer" class="ms-3">
+                <div class="text-secondary"></div>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mt-4">
+                <h4>Plan</h4>
+                <div class="d-flex align-items-center form-check form-switch">
+                  <input
+                    class="form-check-input me-2"
+                    type="checkbox"
+                    id="enablePlanner"
+                    onchange="chatController.saveSetting('enablePlanner')"
+                  />
+                  <label class="form-check-label text-secondary" for="enablePlanner">
+                    <span>Enable research & planning</span>
+                    <i
+                      class="bi bi-question-circle ms-1"
+                      data-bs-toggle="tooltip"
+                      data-bs-title="Multiple AI agents will perform research in parallel before executing the task. May use more tokens, but may help with complex tasks or when working on large existing codebase."
+                    ></i>
+                  </label>
+                </div>
+              </div>
+              <div id="taskPlanProgressContainer"></div>
+              <div id="taskPlanContainer" class="mt-3 px-3">
+                <span class="text-secondary">No plan created yet</span>
+              </div>
+              <div class="mt-4">
+                <button
+                  class="btn btn-link d-flex align-items-center w-100 text-secondary text-decoration-none px-0 collapsed"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#filesContextCollapse"
+                  aria-expanded="false"
+                  aria-controls="filesContextCollapse"
+                >
+                  <span id="filesContextLabel">Files context (0)</span>
+                  <i class="bi bi-chevron-down ms-2 collapse-icon"></i>
+                </button>
+                <div class="collapse px-3" id="filesContextCollapse">
+                  <div id="contextFilesContainer" class="mt-3"></div>
+                </div>
+              </div>
+              <div>
+                <button
+                  class="btn btn-link d-flex align-items-center w-100 text-secondary text-decoration-none px-0 collapsed"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#projectContextCollapse"
+                  aria-expanded="false"
+                  aria-controls="projectContextCollapse"
+                >
+                  <span>Project context</span>
+                  <i class="bi bi-chevron-down ms-2 collapse-icon"></i>
+                </button>
+                <div class="collapse px-3" id="projectContextCollapse">
+                  <div id="contextProjectDetailsContainer" class="mt-3"></div>
+                </div>
               </div>
             </div>
             <div class="tab-pane fade h-100" id="browser" role="tabpanel" aria-labelledby="browser-tab">
@@ -428,6 +470,17 @@
                 />
 
                 <div>
+                  <button
+                    class="btn btn-link p-0 mt-2 text-secondary text-decoration-none d-flex align-items-center collapsed"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#baseUrlCollapse"
+                    aria-expanded="false"
+                    aria-controls="baseUrlCollapse"
+                  >
+                    <span>Custom API Endpoint</span>
+                    <i class="bi bi-chevron-down ms-2 collapse-icon"></i>
+                  </button>
                   <div class="collapse" id="baseUrlCollapse">
                     <label for="baseUrl" class="form-label mt-3 fw-bolder">OpenAI API Endpoint URL:</label>
                     <input
@@ -438,16 +491,6 @@
                       onchange="chatController.saveSetting('baseUrl');"
                     />
                   </div>
-                  <button
-                    class="btn btn-link p-0 mt-2 text-secondary text-decoration-none"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#baseUrlCollapse"
-                    aria-expanded="false"
-                    aria-controls="baseUrlCollapse"
-                  >
-                    Custom API Endpoint <i class="bi bi-chevron-right"></i>
-                  </button>
                 </div>
 
                 <label for="anthropicApiKey" class="form-label mt-3 fw-bolder">Anthropic API Key:</label>
@@ -467,17 +510,17 @@
                   placeholder="OpenRouter API Key"
                   onchange="chatController.saveSetting('openRouterApiKey');"
                 />
-
                 <div class="mt-4">
                   <button
-                    class="btn btn-link p-0 mt-2 text-secondary text-decoration-none"
+                    class="btn btn-link p-0 mt-2 text-secondary text-decoration-none d-flex align-items-center collapsed"
                     type="button"
                     data-bs-toggle="collapse"
                     data-bs-target="#customModelsCollapse"
                     aria-expanded="false"
                     aria-controls="customModelsCollapse"
                   >
-                    Custom Models <i class="bi bi-chevron-right"></i>
+                    <span>Custom Models</span>
+                    <i class="bi bi-chevron-down ms-2 collapse-icon"></i>
                   </button>
                   <div class="collapse p-3" id="customModelsCollapse">
                     <div id="customModelsList"></div>

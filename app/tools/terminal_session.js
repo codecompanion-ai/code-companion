@@ -289,6 +289,7 @@ class TerminalSession {
       if (this.directoryExists(lines[i])) {
         chatController.agent.currentWorkingDir = lines[i];
         this.needToUpdateWorkingDir = false;
+        console.log('current working dir', chatController.agent.currentWorkingDir);
         return chatController.agent.currentWorkingDir;
       }
     }

@@ -61,7 +61,7 @@ class TaskTab {
             </div>
             <div class="form-check form-switch">
               <input class="form-check-input context-file-checkbox" type="checkbox" role="switch" 
-                data-full-path="${fullPath.replace(/\\/g, '\\\\')}" ${enabled ? 'checked' : ''}>
+                data-full-path="${fullPath}" ${enabled ? 'checked' : ''}>
             </div>
           </li>
         `,

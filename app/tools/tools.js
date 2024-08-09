@@ -110,7 +110,7 @@ const toolDefinitions = [
         command: {
           type: 'string',
           description:
-            'Single shell command to run. DO NOT combine multiple shell commands into a single command with "&&"',
+            'Single shell command to run. Do not use "&&" to combine multiple shell commands in Windows PowerShell',
         },
         background: {
           type: 'boolean',
